@@ -30,12 +30,22 @@ class Topology(object):
        -------------
        topFile : string
           path to the topology file
+         
     """
     
     def __init__(self, topFile):
         self.topFile = topFile
 
     def init_top(self):
+        """
+        Returns
+        -----------
+        rtop : python dict 
+           Reduced representation of the input topology
+        indices : NumPy ndarray of shape [n_atoms,]
+           New index mapping for each atom
+        """
+        
         _masses = {'C':12.01, 'O':16.00,
                  'N':14.00, 'S':32.07,
                  'P':30.97}
@@ -63,6 +73,22 @@ class Topology(object):
         return rtop, indices
 
 class DynamicNetwork(Topology):
+    """Builds the network from the input topology and trajectory
+    using cross-correlation and in-contact residues. 
+    
+    Parameters
+    ------------
+    topFile : str
+       Path to topology file
+    trajFile : str
+       Path to MD trajectory
+    ref : str
+       Path to reference PDB - should only be specified if the
+       input trajectory needs to be aligned prior to computing 
+       correlations (see below).
+       
+    """
+    
     def __init__(self, topFile, trajFile, ref=None):
         super(DynamicNetwork, self).__init__(topFile)
         self.rtop, self.indices = self.init_top()
@@ -106,7 +132,6 @@ class DynamicNetwork(Topology):
                 com_means.append(np.mean(c, axis=0))
                 com_coords.append(c)
         return np.asarray(com_coords), np.asarray(com_means)
-
 
     def process_input(self, chunk_size=100, stride=1, align=False):
         """Process the input trajectory and store the chunks
@@ -154,8 +179,8 @@ class DynamicNetwork(Topology):
         
         Returns
         ------------
-        average distances
-            NumPy array of NxN, where N == number of selected indices
+        average distances : NumPy ndarray of shape [n_residues, n_residues]
+            
     
         """
         residues = list(self.rtop.keys())
@@ -342,6 +367,23 @@ class DynamicNetwork(Topology):
 
 
 class DifferenceNetwork(Topology):
+    """Builds the network from the input topologies and trajectories
+    using the difference in persistent contacts between each input. Note 
+    that multiple inputs are neccessary for this calculation to succeed.
+    
+    See Yao, X. Q., Momin, M., & Hamelberg, D. (2019). Journal of chemical information and modeling, 59(7), 3222-3228.
+    
+    Parameters
+    ------------
+    topFiles : list 
+        Each item in the list is a string with the path to 
+        each topology file
+    trajFiles : list
+        Each item in the list is a string with the path to 
+        each trajectory file
+    
+    """
+    
     def __init__(self, topFiles, trajFiles):
         self.topFiles = topFiles
         self.trajs = trajFiles
