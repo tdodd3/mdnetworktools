@@ -124,9 +124,6 @@ class DynamicNetwork(Topology):
     def compute_avg_dist_matrix(self):
         """Compute the average distance between selected residues
             in a given MD trajectory.
-
-        Note that a call to process_ must happen before this method
-        can be used (e.g. self.chunks must exist!)
         
         Returns
         ------------
