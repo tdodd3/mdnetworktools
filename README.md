@@ -9,20 +9,7 @@ In addition to numpy and scipy, MDNetworkTools relies on several external softwa
 2) numba - https://numba.pydata.org/
 3) networkx - https://networkx.org/documentation/stable/
 
-# Installing mdtraj
-With conda:
+# Installation
+To install this package, first clone this repository:
 
-conda install -c conda-forge mdtraj
-
-With pip:
-
-pip install mdtraj
-
-# Installing numba
-Please see https://numba.readthedocs.io/en/stable/user/installing.html for installing numba with conda or pip.
-
-# Installing netwworkx
-With pip:
-
-pip install networkx
-
+git clone
