@@ -1,5 +1,22 @@
+#   This file is part of the mdnetworktools repository.
+#   Copyright (C) 2020 Ivanov Lab,
+#   Georgia State University (USA)
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Lesser General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU Lesser General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """
-    Collections of CUDA functions to compute contacts,
+    Collection of CUDA functions to compute contacts,
     correlations and covariances.
 """
 
@@ -37,7 +54,7 @@ except:
 			"If this is not the desired behavior, please set these " + \
 			"variables in numbaENV.sh (i.e. TPB=N_THREADS and CU_DEVICE=DEVICE_NUMBER)")
 
-# Device functions
+#### Device functions ####
 
 # Distance
 @cuda.jit('float32(float32[:], float32[:])', device=True, inline=True)
@@ -84,7 +101,7 @@ def msqm(coords):
 	return math.sqrt(m / _dim)
 
 
-# CUDA kernel functions
+#### CUDA kernel functions ####
     
 # Covariance
 @cuda.jit
@@ -160,7 +177,7 @@ def cudaDist(chunk, coords, dists):
 			if d <= 0.45 and d != 0.0:
 				dists[r_i, j] = d
 
-# Data prep methods
+#### Data prep methods ####
 
 # Splitting input based on TPB
 def split_coords(coords):
@@ -182,7 +199,7 @@ def split_coords(coords):
 	coord_split = np.asarray(coord_split, dtype=np.float32)
 	return coord_split
 
-# Main calls used by mdnetworktools.py
+#### Main calls used by mdnetworktools.py ####
 
 # Contacts    
 def contacts_by_chunk_CUDA(coords, device=CU_DEVICE):
