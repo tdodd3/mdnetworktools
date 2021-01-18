@@ -27,7 +27,7 @@ setup(
     name='mdnetworktools',
     author='Thomas Dodd',
     author_email='tdodd224@gmail.com',
-    url='https://github.com/tdodd3/mdnetworktools/',
+    url='https://github.com/tdodd3/mdnetworktools/tree/main/mdnetworktools',
     description=description,
     packages=find_packages(),
     setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
