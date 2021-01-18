@@ -21,6 +21,17 @@ import timeseriestools as tst
 from scipy.spatial.distance import pdist, squareform
 
 class Topology(object):
+    """Reduced representation of the input topology
+       in which the indices of the heavy atoms in the protein, or P, OP1
+       OP2, N1 and N3 atoms in DNA, along with their masses are stored
+       in a dictionary.
+        
+       Parameters
+       -------------
+       topFile : string
+          path to the topology file
+    """
+    
     def __init__(self, topFile):
         self.topFile = topFile
 
@@ -66,6 +77,22 @@ class DynamicNetwork(Topology):
             self.ref_indices = topology.select('name CA or name P')
 
     def com_coords(self, coords):
+        """Computes the center of mass for each residue.
+        
+        Parameters
+        ------------
+        coords : mdtraj.Trajectory.xyz object or NumPy ndarray
+            Contains the xyz coordinates for all selected atoms
+            shape = [n_frames, n_atoms, 3]
+        
+        Returns
+        ------------
+        coms : NumPy array of shape = [n_frames, n_residues, 3]
+            Contains the centers of mass computed for each residue
+            in every frame.
+            
+        """
+            
         com_coords = []
         com_means = []
         _len = coords.shape[0]
@@ -219,7 +246,8 @@ class DynamicNetwork(Topology):
 
         Returns
         -------------
-         correlation matrix : NumPy array of shape [n_residues, n_residues]
+         None - self.corr attribute becomes accessible
+         self.corr == correlation matrix : NumPy array of shape [n_residues, n_residues]
 
         """
         
@@ -261,7 +289,7 @@ class DynamicNetwork(Topology):
 
         Returns
         -------------
-        modified correlation matrix : NumPy array of shape [n_residues, n_residues]
+        None - correlation matrix is modified in-place
 
         """
         interval = int(scheme.split('+')[-1])
@@ -273,6 +301,28 @@ class DynamicNetwork(Topology):
                 self.corr[k][i] = 0.0
 
     def build_network(self, cutoff=4.5, scheme='all', enable_cuda=False):
+        """Low-level API that builds the network from the pre-processed
+        chunks.
+        
+        Parameters
+        ------------
+        cutoff : float 
+            Distance cutoff in angstroms for determining in contact residues
+        scheme : string
+            How to modify the correlation matrix, i+1, i+2...
+            or all - no modification
+        enable_cuda : bool
+            Whether to offload correlation calculation onto an available
+            GPU.
+            
+        Returns
+        ------------
+        None - distance, correlation and network matrices are saved to file.
+        The attributes self.dist_matrix, self.corr and self.network become 
+        accessible.
+        
+        """
+        
         self.dist_matrix = self.compute_avg_dist_matrix()
         self.compute_correlation_matrix(log=True, enable_cuda=enable_cuda)
         
