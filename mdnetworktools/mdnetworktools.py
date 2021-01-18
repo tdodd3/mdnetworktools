@@ -504,7 +504,7 @@ class DifferenceNetwork(Topology):
         
         return diff
 
-    def build_network(self, cutoff=0.90, chunk_size=100, stride=1):
+    def build_network(self, cutoff=0.90, chunk_size=100, stride=1, enable_cuda=False):
         states = []
         
         for i in range(len(self.topFiles)):
@@ -512,7 +512,7 @@ class DifferenceNetwork(Topology):
             chunks, _ = self.process_traj(self.trajs[i], self.topFiles[i],
                                           current_indices, chunk_size=chunk_size,
                                           stride=stride)
-            state = self.compute_contacts(chunks, self.rtops[i], current_indices)
+            state = self.compute_contacts(chunks, self.rtops[i], current_indices, enable_cuda=enable_cuda)
             states.append(state)
         
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff)
