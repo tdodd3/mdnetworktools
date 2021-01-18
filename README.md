@@ -12,4 +12,8 @@ In addition to numpy and scipy, MDNetworkTools relies on several external softwa
 # Installation
 To install this package, first clone this repository:
 
-git clone
+git clone https://github.com/tdodd3/mdnetworktools
+
+Then:
+
+python setup.py install
