@@ -62,6 +62,7 @@ class DynamicNetwork(Topology):
         # calculation of the covariance or correlation matrix
         if ref is not None:
             self.ref = md.load_pdb(ref)
+            topology = md.load(ref).topology
             self.ref_indices = topology.select('name CA or name P')
 
     def com_coords(self, coords):
