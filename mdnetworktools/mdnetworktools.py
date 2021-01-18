@@ -340,7 +340,7 @@ class DifferenceNetwork(Topology):
     
         return raw_chunks, chunk_weights
 
-    def compute_contacts(self, chunks, rtop, indices):
+    def compute_contacts(self, chunks, rtop, indices, enable_cuda=False):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
            of each other.
@@ -360,6 +360,9 @@ class DifferenceNetwork(Topology):
                N x N matrix containing contact probabilities between all residues
         
         """
+        if enable_cuda == True:
+            import utilCUDA as uc
+            
         residues = [list(rtop[i].keys()) for i in rtop]
         res_pairs = [[residues[i], residues[j]] for i in range(len(residues)-1) \
                                                 for j in range(i+1, len(residues))]
@@ -369,7 +372,10 @@ class DifferenceNetwork(Topology):
         c = np.zeros(shape=(rank, rank))
 
         for chunk in chunks:
-            tmp_c = tst.contacts_by_chunk(chunk)
+            if enable_cuda == True:
+                tmp_c = uc.contacts_by_chunk_CUDA(chunk)
+            else:
+                tmp_c = tst.contacts_by_chunk(chunk)
             c += tmp_c
         c /= tframes
         
