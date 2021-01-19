@@ -9,6 +9,10 @@ In addition to numpy and scipy, the following packages will need to be installed
 2) numba - https://numba.pydata.org/
 3) networkx - https://networkx.org/documentation/stable/
 
+MDNetworkTools has some features which can take advantage of a GPU. To enable CUDA versions of 
+some fuctions, either cudatools must be installed through conda (see numba docs), or you must source a bash file
+prior to running your script. An example bash file can be found in this directory (numbaVAR_example.sh).
+
 # Installation
 To install this package, first clone this repository:
 
