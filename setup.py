@@ -23,7 +23,7 @@ visualizing networks from molecular dynamics simulation data.
 '''
 
 setup(
-    use_scm_version=dict(root='..', relative_to=__file__),
+    use_scm_version=dict(root='.', relative_to=__file__),
     name='mdnetworktools',
     author='Thomas Dodd',
     author_email='tdodd224@gmail.com',
