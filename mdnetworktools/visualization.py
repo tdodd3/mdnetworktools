@@ -17,7 +17,7 @@
 """
 	This is a class of functions for visualizing the results of
 	mdnetworktools analyses (i.e. network generation or suboptimal
-	paths calculations). These results are transformed into the BILD
+	paths calculations). Results are transformed into the BILD
 	format which is recognized by the Chimera visualization software
 	https://www.cgl.ucsf.edu/chimera/. These functions have only been
 	tested on PDBs formatted with cpptraj in which residues have been 
