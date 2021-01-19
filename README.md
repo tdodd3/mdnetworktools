@@ -25,6 +25,6 @@ python setup.py install
 MDNetworkTools has some features which can take advantage of a GPU. Currently, there are two ways to 
 enable the CUDA versions of these methods:
 
-1) Install cudatools via Conda installer (see numba docs).
+1) Install cudatools via the Conda installer (see numba docs).
 2) If you have aleady have CUDA installed on your system then you can source a bash file to point to
 the $CUDA_HOME environment variable prior to running MDNetworkTools. An example bash file is given in this directory.
