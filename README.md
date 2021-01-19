@@ -1,7 +1,7 @@
 # MDNetworkTools
 
 MDNetworkTools is an all-in-one python package that builds networks directly from molecular dynamics trajectories. Additionally, the software
-provides functionality for network analysis (community detection and subtoptimal paths calculations) and visualization. 
+provides functionality for network analysis (community detection and suboptimal paths calculations) and visualization. 
 At its core, MDNetworkTools utilizes multiple Python modules. Trajectory and topology processing is accomplished with MDTraj, while the network generation
 algorithms employ jit-compiled methods via the Numba package. At present, only network generation methods benefit from the speed-up of jit, although future releases
 may extend this to the network analysis algorithms. Please refer to Required Packages for the complete list of necessary software.
