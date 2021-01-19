@@ -24,6 +24,7 @@ from numba import cuda
 import numpy as np
 import math
 import timeseriestools as tst
+import os
 import warnings
 
 # Set the global constants for threads per block (TPB) and
@@ -35,17 +36,21 @@ TPB = 512
 CU_DEVICE = 0
 
 try:
-	f = open(FILE, "r")
-	lines = f.readlines()
-	for line in lines:
-		if "TPB" in line and "#" not in line:
-			lines = line.split("=")
-			TPB = int(lines[-1][:-1])
-		if "CU_DEVICE" in line and "#" not in line:
-			lines = line.split("=")
-			CU_DEVICE = int(lines[-1][:-1])
+	TPB = int(os.environ['TPB'])
 except:
+	warnings.warn("Threads per block ($TPB) variable not defined. " + \
+		      "Setting the default value to 512 threads. If " + \
+		      "this is not the desired behavior, please set " + \
+		      "variable manually.")
 	pass
+
+try:
+	CU_DEVICE = int(os.environ['CU_DEVICE'])
+except:
+	warnings.warn("Device number ($CU_DEVICE) not defined. " + \
+		      "Setting the default to device 0. If this " + \
+		      "is not the desired behavior, please set " + \
+		      "variable manually.")
 
 
 
