@@ -28,10 +28,10 @@ import os
 import warnings
 
 # Set the global constants for threads per block (TPB) and
-# GPU device. Check to see if the user overrode the defaults 
-# and change if necessary.
+# GPU device (CU_DEVICE). Check to see if the user overrode 
+# the defaults and change if necessary.
 
-FILE = "numbaVAR.sh"
+#FILE = "numbaVAR.sh"
 TPB = 512
 CU_DEVICE = 0
 
