@@ -27,7 +27,8 @@ import timeseriestools as tst
 import warnings
 
 # Set the global constants for threads per block (TPB) and
-# GPU device. First, check for numbaENV.sh to see if the user
+# GPU device. First, try to import cudatools, if that fails,
+# check for numbaENV.sh to see if the user
 # overides the default values. In the case where users employ
 # cudatools installed by Conda and avoid using numbaENV.sh, leave
 # defaults in place.
@@ -37,22 +38,26 @@ TPB = 512
 CU_DEVICE = 0
 
 try:
-	f = open(FILE, "r")
-	lines = f.readlines()
-	for line in lines:
-		if "TPB" in line and "#" not in line:
-			lines = line.split("=")
-			TPB = int(lines[-1][:-1])
-		if "CU_DEVICE" in line and "#" not in line:
-			lines = line.split("=")
-			CU_DEVICE = int(lines[-1][:-1])
-
-except:
+	import cudatools
+except ImportError:
 	pass
-	warnings.warn("Enivironment file numbaENV.sh not found. " + \
-			"Setting TPB=512 threads and CU_DEVICE=0. \n" + \
-			"If this is not the desired behavior, please set these " + \
-			"variables in numbaENV.sh (i.e. TPB=N_THREADS and CU_DEVICE=DEVICE_NUMBER)")
+	try:
+		f = open(FILE, "r")
+		lines = f.readlines()
+		for line in lines:
+			if "TPB" in line and "#" not in line:
+				lines = line.split("=")
+				TPB = int(lines[-1][:-1])
+			if "CU_DEVICE" in line and "#" not in line:
+				lines = line.split("=")
+				CU_DEVICE = int(lines[-1][:-1])
+
+	except:
+		pass
+		warnings.warn("Enivironment file numbaENV.sh not found. " + \
+				"Setting TPB=512 threads and CU_DEVICE=0. \n" + \
+				"If this is not the desired behavior, please set these " + \
+				"variables in numbaENV.sh (i.e. TPB=N_THREADS and CU_DEVICE=DEVICE_NUMBER)")
 
 #### Device functions ####
 
