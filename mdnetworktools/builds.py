@@ -173,7 +173,7 @@ class DynamicNetwork(Topology):
         self.chunk_size = chunk_size
         self.stride = stride
         
-    def compute_avg_dist_matrix(self):
+    def compute_avg_dist_matrix(self, chunk_size=100, stride=1):
         """Compute the average distance between selected residues
             in a given MD trajectory.
         
@@ -355,7 +355,8 @@ class DynamicNetwork(Topology):
         
         """
         
-        self.dist_matrix = self.compute_avg_dist_matrix()
+        self.dist_matrix = self.compute_avg_dist_matrix(chunk_size=chunk_size,
+                                                       stride=stride)
         
         self.process_input(chunk_size=chunk_size, stride=stride, align=align)
         self.compute_correlation_matrix(log=True, enable_cuda=enable_cuda)
