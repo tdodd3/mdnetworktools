@@ -152,7 +152,8 @@ def cudaCorrel(chunk, coords, corr):
 			cij = c / (mag1 * mag2)
 			corr[r_i, j] = cij
 
-# Pairwise distance	
+# Pairwise distance - while technically faster than the jit version
+# this method is still inefficient and needs a future fix
 @cuda.jit		
 def cudaDist(chunk, coords, dists):
 	
