@@ -28,7 +28,7 @@
 import numpy as np
 from scipy import interpolate
 import mdtraj as md
-from mdnetworktools import Topology
+from builds import Topology
 
 class DrawObject(Topology):
     def __init__(self, top, ref, network=None):
