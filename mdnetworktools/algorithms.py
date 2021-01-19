@@ -23,10 +23,25 @@ from itertools import count
 from heapq import heappush, heappop
 
 class GirvanNewman(object):
+	"""Executes the Girvan-Newman algorithm to subdivide
+	the input network into a specified number of communities.
+	
+	Parameters
+	------------
+	network : NumPy ndarray
+		This can either be a mdnetworktools object (DynamicNetwork.network
+		DifferenceNetwork.network) or a network that has been loaded
+		into memory using numpy.genfromtxt.
+		
+	"""
+	
 	def __init__(self, network):
 		self.network = network
 		self.G = nx.from_numpy_matrix(network)
-
+	
+	#### Helper functions ####
+	
+	# Betweenness
 	def gnStep(self, weight='weight'):
 		init_ncomp = nx.number_connected_components(self.G)
 		ncomp = init_ncomp
@@ -38,14 +53,16 @@ class GirvanNewman(object):
 				if float(v) == max_:
 					self.G.remove_edge(k[0], k[1])
 			ncomp = nx.number_connected_components(self.G)
-
+			
+	# Modularity
 	def compute_modularity(self, clist):
 		comps = []
 		for c in clist:
 			s = {x for x in c}
 			comps.append(s)
 		return nac.modularity(self.G, comps)
-
+	
+	# Preprocessing 
 	def _remove(self, len_comps=4):
 		llfile = open("removed_components.txt", "w")
 		icomps = sorted(nx.connected_components(self.G),
@@ -66,9 +83,30 @@ class GirvanNewman(object):
 		else:
 			llfile.write("Number of connected components: " + \
 					"{}\n".format(len_ncomps))
-
+	
+	#### Main execution ####
+	
 	def run(self, weight='weight', ncomms=25):
-		self._remove()
+		"""Run the Girvan-Newman algorithm on the input network.
+		
+		Parameters
+		------------
+		weight : string or None
+			For dynamic networks (mdnetworktools.DynamicNetwork)
+			weight should be set to 'weight'. For difference 
+			networks (mdnetworktools.DifferenceNetwork) weight
+			should be set None.
+		ncomms : int
+			Number of communities at which to stop the algorithm
+			
+		Returns
+		-----------
+		None - The community information is saved to a file at every 
+			subdivision.
+			
+		"""
+		
+		self._remove() # Remove loosely-connected components from the graph
 		t = open("communities.dat", "w")
 		bestQ = 0.0
 		diff = 0.0
@@ -124,6 +162,23 @@ class PathBuffer(object):
 		return path
 
 class SOAN(PathBuffer):
+	"""Computes suboptimal paths between a source and target 
+	node using Subsets of Adjacent Nodes (SOAN) method. 
+	
+	See reference
+	
+	Parameters
+	-------------
+	A : NumPy ndarray
+		Network matrix - can be a mdnetworktools object or
+		loaded into memory with numpy.genfromtxt
+	s : int
+		Source node (index-based)
+	t : int
+		Target node (index-based)
+		
+	"""
+	
 	def __init__(self, A, s, t):
 		self.A = A
 		self.G = nx.from_numpy_matrix(self.A)
@@ -138,6 +193,27 @@ class SOAN(PathBuffer):
 		that it has been modified to work explicitly on NumPy arrays.
 		Additionally, the parameter ignore_edges/nodes allows one to 
 		employ this algorithm with Yen's algorithm.
+		
+		Parameters
+		------------
+		A : NumPy ndarray
+			Network matrix
+		s : int
+			Source node (index-based)
+		t : int 
+			Target node (index-based)
+		ignore_nodes : set or None
+			Nodes to ignore when computing the shortest path
+		ignore_edges : set of tuples == (i, j) where i,j make the edge or None
+			Edges to ignore when computing the shortest path
+			
+		Returns
+		-----------
+		shortest path : list of ints
+			Indices of the nodes that comprise the shortest path found
+			In the event that No path is found, raises KeyError - don't
+			worry this is handled elsewhere.
+				
 		"""
 		if s == t:
 			return (0, [s])
@@ -200,16 +276,21 @@ class SOAN(PathBuffer):
 		if finalpath == []:
 			raise KeyError
 
+	#### Helper Functions ####		
+	
+	# Optimal path
 	def find_opt_path(self):
 		opt_path_len, opt_path = self.dijkstra(self.A, self.s, self.t)
 		self.opt_path = opt_path
 		self.opt_path_len = opt_path_len
-		
+	
+	# Neighbors by node
 	def _neighbors(self, node):
 		neighbors = np.where(self.A[:,node] != 0.0)[0]
 		neighbors = [x for x in neighbors if x != node]
 		return neighbors
-
+	
+	# Neighbors of all given nodes
 	def get_all_neighbors(self, path):
 		all_neighbors = []
 		for node in path:
@@ -217,6 +298,7 @@ class SOAN(PathBuffer):
 		all_neighbors = np.hstack(all_neighbors)
 		return list(set(all_neighbors))
 
+	# Level expansion
 	def get_level(self):
 		if self.level == 1:
 			return self.get_all_neighbors(self.opt_path)
@@ -230,6 +312,7 @@ class SOAN(PathBuffer):
 			master = np.hstack(master)
 			return list(set(master))
 
+	# Subgraph creation at user-specified level
 	def create_subgraph(self, level=1):
 		self.level = level
 		neighborlist = self.get_level()
@@ -261,22 +344,48 @@ class SOAN(PathBuffer):
 		rtarget = mapping[self.t]
 		return SadjM, mapping, reversemapping, unmapped_paths, rtarget
 
+	# Postprocessing
 	def map_paths_to_graph(self, paths, mapping):
 		mapped_paths = []
 		for p in paths:
 			mapped_paths.append([mapping[x] for x in p])
 		return mapped_paths
 
+	# Distance
 	def _dist(self, A, path):
 		return np.sum([A[path[x]][path[x+1]] for x in range(len(path)-1)])
-
+	
+	# Yen's algorithm
 	def find_paths_from_graph(self, S, k, t, somepath):
 		"""
 		This is Yen's algorithm for finding k-shortest paths.
 		It uses Dijkstra's algorithm to find the shortest path
 		between a spur and the target. Additionally, we ignore
 		nodes and edges from already discovered paths.
+		
+		Parameters
+		------------
+		S : NumPy ndarray
+			Subgraph or subset of nodes to search for 
+			suboptimal paths.
+		k : int
+			Number of shortest paths to find in given
+			subgraph
+		t : int
+			target node - mapped to the subgraph
+		somepath : list
+			Already discovered path - used to populate
+			an empty Queue object. This is usually the optimal
+			path.
+			
+		Returns
+		-----------
+		Suboptimal paths : list of lists
+			Each list contains the nodes that comprise one of the
+			shortest paths found with Yen's algorithm.
+			
 		"""
+		
 		found_paths = [somepath]
 		pathlist = [somepath]
 		prev_path = somepath
@@ -316,6 +425,7 @@ class SOAN(PathBuffer):
 				break
 		return found_paths
 
+	# Saves the results to file
 	def output_paths(self, paths, pathstowrite):
 		unsorted = [p + [self._dist(self.A, p)] for p in paths]
 		sorted_paths = sorted(unsorted, key=itemgetter(-1))
@@ -329,7 +439,26 @@ class SOAN(PathBuffer):
 				break
 		t.close()
 
+		
 	def run(self, level=1, numpaths=1000):
+		"""Low-level API that runs the SOAN method.
+		
+		Parameters
+		-------------
+		level : int
+			The level at which to create the subgraph - 
+			how many neighbors away from the optimal path
+			to expand to.
+		numpaths : int
+			The total number of shortest paths to find in the 
+			subgraph
+			
+		Returns
+		------------
+		None - All results are written to file.
+		
+		"""
+		
 		self.find_opt_path()
 		SadjM, mapping, reversemapping, \
 		unmapped_paths, mapped_t = self.create_subgraph(level)
