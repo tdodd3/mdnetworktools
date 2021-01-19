@@ -325,12 +325,19 @@ class DynamicNetwork(Topology):
                 self.corr[i][k] = 0.0
                 self.corr[k][i] = 0.0
 
-    def build_network(self, cutoff=4.5, scheme='all', enable_cuda=False):
+    def build_network(self, chunk_size=100, stride=1, align=False, 
+                      cutoff=4.5, scheme='all', enable_cuda=False):
         """Low-level API that builds the network from the pre-processed
         chunks.
         
         Parameters
         ------------
+        chunk_size : int
+            Number of frames to process at one time
+        stride : int
+            Number of frames to skip when processing
+        align : bool
+            Whether to align the trajectory prior to computing correlation matrix
         cutoff : float 
             Distance cutoff in angstroms for determining in contact residues
         scheme : string
@@ -349,6 +356,8 @@ class DynamicNetwork(Topology):
         """
         
         self.dist_matrix = self.compute_avg_dist_matrix()
+        
+        self.process_input(chunk_size=chunk_size, stride=stride, align=align)
         self.compute_correlation_matrix(log=True, enable_cuda=enable_cuda)
         
         np.savetxt("dist.dat", self.dist_matrix, fmt="%0.5f")
@@ -364,7 +373,6 @@ class DynamicNetwork(Topology):
            self.postprocess(scheme=scheme)
         self.network = self.dist_matrix * self.corr
         np.savetxt("network.dat", self.network, fmt="%0.5f")
-
 
 class DifferenceNetwork(Topology):
     """Builds the network from the input topologies and trajectories
@@ -480,6 +488,23 @@ class DifferenceNetwork(Topology):
         return contacts
 
     def consensus_network(self, states, cutoff):
+        """Computes the consensus network from the determined
+        contact maps of the input trajectories.
+        
+        Parameters
+        ------------
+        states : list
+            List of NumPy arrays containing the contact maps
+        cutoff : float
+            Value at which to consider contacts persistent
+            
+        Returns
+        ------------
+        consensus matrix : NumPy NxN array where N == number of 
+            conserved residues across the inputs
+            
+        """
+        
         consensus_matrix = np.zeros(shape=states[0].shape)
         
         for state in states:
@@ -497,6 +522,21 @@ class DifferenceNetwork(Topology):
         return consensus_matrix
 
     def diff_network(self, states):
+        """Computes the difference network from the determined
+        contact maps of input trajectories.
+        
+        Parameters
+        ------------
+        states : list
+            List containing the contact maps
+            
+        Returns
+        ------------
+        difference network : NumPy NxN array where N == number
+            of conserved residues across the inputs
+            
+        """
+        
         diff = states[0]
         
         for i in range(1, len(states)):
@@ -505,6 +545,28 @@ class DifferenceNetwork(Topology):
         return diff
 
     def build_network(self, cutoff=0.90, chunk_size=100, stride=1, enable_cuda=False):
+        """Low-level API that builds the network
+        
+        Parameters
+        ------------
+        cutoff : float 
+           Probability cutoff for determining persistent contacts
+        chunk_size : int
+            Number of frames to process at one time
+        stride : int
+            Number of frames to skip when processing
+        enable_cuda : bool
+            Whether to offload contacts calculation onto an available
+            GPU.
+            
+        Returns
+        ------------
+        None - consensus and difference matrices are saved to file. The
+            attributes self.consensus_matrix and self.difference_matrix
+            become accessible.
+        
+        """
+        
         states = []
         
         for i in range(len(self.topFiles)):
@@ -512,7 +574,8 @@ class DifferenceNetwork(Topology):
             chunks, _ = self.process_traj(self.trajs[i], self.topFiles[i],
                                           current_indices, chunk_size=chunk_size,
                                           stride=stride)
-            state = self.compute_contacts(chunks, self.rtops[i], current_indices, enable_cuda=enable_cuda)
+            state = self.compute_contacts(chunks, self.rtops[i], current_indices, 
+                                          enable_cuda=enable_cuda)
             states.append(state)
         
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff)
@@ -522,6 +585,25 @@ class DifferenceNetwork(Topology):
         np.savetxt("difference.dat", self.difference_matrix, fmt="%0.5f")
                 
     def get_communities(self, commFile, offset):
+        """Function for loading communities from a txt file.
+        
+        Parameters
+        ------------
+        commFile : string
+            Path to communities file
+        offset : int
+            Where the residue numbering starts - in most cases
+            this will be zero.
+        
+        Returns
+        ------------
+        communities - Python dict
+            Dict is structured as keys == community ID (index-based) 
+            and values == residue IDs that belong to that community
+            (also index-based).
+        
+        """
+        
         s = {}
         count = 0
         with open(commFile) as f:
@@ -533,6 +615,26 @@ class DifferenceNetwork(Topology):
         return s
 
     def deltaP(self, commFile, diff, offset=0):
+        """Function for accumulating the difference in contact
+        probabilities into communities.
+        
+        commFile : string
+            Path to communities text file
+        diff : NumPy array
+            Difference network containing the change in 
+            contact probabilities
+        offset : int
+            Where the residue numbering starts - in most cases
+            this will be zero.
+            
+        Returns
+        -----------
+        contacts : Python dict
+            Dict is structured as keys == tuple(communityi, communityj)
+            and values == total difference in contact probability
+            
+        """
+        
         comms = self.get_communities(commFile)
         nonzero = np.where(diff != 0.0)
         contacts = {}
@@ -556,6 +658,14 @@ class DifferenceNetwork(Topology):
         return contacts
  
     def write_deltaP(self, deltaP, oname="deltaP.dat"):
+        """Writes the results of self.deltaP to a text file.
+        
+        Parameters
+        -------------
+        deltaP : Python dict
+            contacts determined from self.deltaP
+        """
+        
         f = open(oname, "w")
         for pair in deltaP:
             f.write("{} {} {}\n".format(pair[0], pair[1], deltaP[pair]))
