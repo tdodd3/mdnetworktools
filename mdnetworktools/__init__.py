@@ -28,5 +28,5 @@ __email__ = "tdodd224@gmail.com"
 
 from . import mdnetworktools
 from . import timeseriestools
-from . import utilCUDA
+#from . import utilCUDA
 from . import visualization
