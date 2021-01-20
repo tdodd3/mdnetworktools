@@ -438,7 +438,7 @@ class DifferenceNetwork(Topology):
     
         return raw_chunks, chunk_weights
 
-    def compute_contacts(self, chunks, rtop, indices, enable_cuda=False):
+    def compute_contacts(self, chunks, rtop, indices):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
            of each other.
@@ -458,35 +458,23 @@ class DifferenceNetwork(Topology):
                N x N matrix containing contact probabilities between all residues
         
         """
-        if enable_cuda == True:
-            import utilCUDA as uc
+        
+        # Currently, JIT and CUDA versions for computing
+        # contacts do not support systems containing more than 16,000 atoms.
+        # Working on a fix for this...
             
         residues = [list(rtop[i].keys()) for i in rtop]
-        res_pairs = [[residues[i], residues[j]] for i in range(len(residues)-1) \
-                                                for j in range(i+1, len(residues))]
-
-        rank = len(indices)
         tframes = sum([i.shape[0] for i in chunks])
+        rank = len(residues)
         c = np.zeros(shape=(rank, rank))
 
         for chunk in chunks:
-            if enable_cuda == True:
-                tmp_c = uc.contacts_by_chunk_CUDA(chunk)
-            else:
-                tmp_c = tst.contacts_by_chunk(chunk)
-            c += tmp_c
-        c /= tframes
+            for frame in chunk:
+                tst.contacts_by_chunk(frame, residues, c)
         
-        # Reduce the all-atom contact map to just the largest probable contact
-        # between residues
-        contacts = np.zeros(shape=(len(residues),len(residues)))
+        c /= float(tframes)
         
-        for p in res_pairs:
-            cprobij = np.max(np.ravel(c[p[0]][:,p[1]]))
-            contacts[p[0]][p[1]] = cprobij
-            contacts[p[1]][p[0]] = cprobij
-        
-        return contacts
+        return c
 
     def consensus_network(self, states, cutoff):
         """Computes the consensus network from the determined
