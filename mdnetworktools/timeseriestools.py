@@ -122,3 +122,28 @@ def contacts_by_chunk(coords, cutoff=0.45):
 		contacts += dists
 	return contacts
 
+# Slower version for larger systems (>16,000 atoms)
+@jit(nopython=True, cache=True)
+def _minwdist(c1, c2):
+	min_d = 1000.0
+	for x in range(c1.shape[0]):
+		d = np.sqrt(np.sum((c2-c1[x])**2, axis=1))
+		tmp_d = np.min(d)
+		if tmp_d > 1.5:
+			break
+		if tmp_d < min_d:
+			min_d = tmp_d
+	return min_d
+
+def contacts_by_chunk2(frame, residues, c):
+	for i in range(len(residues)-2):
+		res1 = frame[residues[i]]
+		for j in range(i+2, len(residues)):
+			res2 = frame[residues[j]]
+			min_d = _minwdist(res1, res2)
+			if min_d <= 0.45:
+				c[i][j] += 1.0
+				c[j][i] += 1.0
+
+
+
