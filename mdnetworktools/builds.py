@@ -470,7 +470,7 @@ class DifferenceNetwork(Topology):
 
         for chunk in chunks:
             for frame in chunk:
-                tst.contacts_by_chunk(frame, residues, c)
+                tst.contacts_by_frame(frame, residues, c)
         
         c /= float(tframes)
         
