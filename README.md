@@ -27,5 +27,5 @@ enable the CUDA versions of these methods:
 
 1) Install cudatools via the Conda installer (see numba docs).
 2) If CUDA is already installed on your system, then you can source a bash file prior to running MDNetworkTools.
-Refer to numbaVAR_example.sh in this directory for examples with 2 different setups (python 2.7, numba 0.43.1 and CUDA-8.0)
+Refer to env_example.sh in this directory for examples with 2 different setups (python 2.7, numba 0.43.1 and CUDA-8.0)
 and (python 3.7, numba 0.52.1 and CUDA-9.0).
