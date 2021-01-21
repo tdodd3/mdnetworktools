@@ -16,12 +16,13 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 	This is a class of functions for visualizing the results of
-	mdnetworktools analyses (i.e. network generation or suboptimal
-	paths calculations). Results are transformed into the BILD
+	mdnetworktools analyses (i.e. network generation, community detection 
+	or suboptimal paths calculations). Results are transformed into the BILD
 	format which is recognized by the Chimera visualization software
-	https://www.cgl.ucsf.edu/chimera/. These functions have only been
-	tested on PDBs formatted with cpptraj in which residues have been 
-	renumbered sequentially (1,2,3,...,N). However, it is likely that
+	https://www.cgl.ucsf.edu/chimera/. For community detection, a python
+	script is generated which can be loaded into Chimera for visualization
+	purposes. These functions have only been tested on PDBs in which residues have been 
+	renumbered sequentially (1,2,3,...,N). However, it is possible that some of
 	these methods will still work with general PDBs downloaded from RCSB.
 """
 
