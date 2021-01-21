@@ -36,7 +36,8 @@ class DrawObject(Topology):
         self.rtop, self.indices = self.init_top()
         self.network = network
         self.ref = md.load_pdb(ref, atom_indices=self.indices)
-    
+	self.refName = ref    
+
     def com_(self, coords, resid):
         indices = list(self.rtop[resid].keys())
         weights = list(self.rtop[resid].values())
@@ -120,4 +121,59 @@ class DrawObject(Topology):
                        round(y1,3), round(z1,3), round(x2,3), round(y2,3),
                        round(z2,3), radius)
                 t.write(lt)
+        t.close()
+
+    def writecommunities(self, commFile, ncomms):
+
+        comms = {}
+        fromFile = None
+        FILE = open(commFile, "r")
+        f = FILE.readlines()
+        count = 0
+        for line in f:
+                if "Partition" in line:
+                        lines = line.split()
+                        if int(lines[-1]) == ncomms:
+                                fromFile = f[count+1:count+ncomms+1]
+                                break
+                count += 1
+
+        t = open("communities{}.txt".format(ncomms), "w")
+        for l in fromFile:
+                t.write(l)
+        t.close()
+        FILE.close()
+
+    def write_chimera_session(self, commFile, ncomms):
+
+        writecommunities(commFile, ncomms)
+        t = open("communities{}.py".format(ncomms), "w")
+
+        t.write("import os\nimport numpy as np\n" + \
+                "from chimera import runCommand as rc\n" + \
+                "from chimera import replyObj\n")
+
+        t.write("\n# Def function for reading in community data\n")
+
+        func = "def get_communities(fname, offset=1):\n\ts={}\n\tcount=0\n" + \
+                "\twith open(fname) as f:\n\t\tfor line in f:\n\t\t\t" + \
+                "lines = line.split()\n\t\t\tresids = [str(int(r)+offset) for r in lines]\n\t\t\t" + \
+                "s[count] = resids\n\t\t\tcount += 1\n\treturn s\n"
+
+        color_dict = "\ncolors = {0:'cornflower blue', 1:'coral', 2:'dark magenta',\n\t\t" + \
+                        "3:'dark cyan', 4:'cyan', 5:'forest green', 6:'navy blue',\n\t\t" + \
+                        "7:'magenta', 8:'purple', 9:'deep pink', 10:'salmon',\n\t\t" + \
+                        "11:'blue', 12:'green', 13:'gold', 14:'rosy brown',\n\t\t" + \
+                        "15:'khaki', 16:'red', 17:'pink', 18:'dim gray',\n\t\t" + \
+                        "19:'sienna', 20:'dark red', 21:'sea green', 22:'tan',\n\t\t" + \
+                        "23:'orchid', 24:'violet red'}\n"
+
+        txtfile = "communities{}.txt".format(ncomms)
+        exe = "for c in comms:\n\treplyobj.status('Coloring residues in community ' + str(c))\n\t" + \
+	t.write(func)
+        t.write(color_dict)
+        t.write("comms = get_communities('{}')\n".format(txtfile))
+        t.write("rc('open ' + {})\n".format(self.refName))
+        t.write(exe)
+
         t.close()
