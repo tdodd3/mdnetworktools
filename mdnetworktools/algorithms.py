@@ -173,17 +173,17 @@ class SOAN(PathBuffer):
 		Network matrix - can be a mdnetworktools object or
 		loaded into memory with numpy.genfromtxt
 	s : int
-		Source node (index-based)
+		Source node (serial-based)
 	t : int
-		Target node (index-based)
+		Target node (serial-based)
 		
 	"""
 	
 	def __init__(self, A, s, t):
 		self.A = A
 		self.G = nx.from_numpy_matrix(self.A)
-		self.s = s
-		self.t = t
+		self.s = s - 1 # convert to index
+		self.t = t - 1 # convert to index
 
 	def dijkstra(self, A, s, t, ignore_nodes=None, ignore_edges=None):
 		"""
