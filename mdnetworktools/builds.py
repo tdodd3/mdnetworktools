@@ -403,54 +403,59 @@ class DifferenceNetwork(Topology):
             r, i = self.init_top()
             self.rtops.append(r)
             self.indices.append(i)
-
-    def process_traj(self, traj, top, indices, chunk_size=100, stride=1):
-        """Process the input trajectory and store the chunks
-           for future use
-
+    
+    def configure_stride(self, traj, top, chunk_size, f=0.1):
+        """Reconfigures the stride argument so that only a 
+        percentage of the total trajectory is used for analysis.
+        
         Parameters
         ------------
-        traj : str
-            Path to MD trajectory
-        top : str
-            Path to topology file 
-        indices : array-like
-            Atom indices to load from MD trajectory
+        traj : string
+            Path to trajectory file
+        top : string
+            Path to topology file
         chunk_size : int
             Number of frames to process at one time
-        stride : int
-            Number of frames to skip when reading
-
+        f : float
+            Percentage of total trajectory
+            
         Returns
         ------------
-        trajectory coordinates : list of NumPy arrays
-             where is array in the list is of shape [chunk_size, self.indices, 3]
-
+        stride : int
+        
         """
-        raw_chunks = []
-        chunk_weights = []
-        for chunk in md.iterload(traj, top=top, chunk=chunk_size, 
-                                 stride=stride, atom_indices=indices):
+            
+        tframes = 0
+        
+        for chunk in md.iterload(traj, top=top, chunk=chunk_size):
+                tframes += chunk.xyz.shape[0]
+        t = float(tframes) * f
+        stride = int(math.ceil(tframes/t))
+        
+        return stride
 
-            coords = chunk.xyz
-            raw_chunks.append(coords)
-            chunk_weights.append(coords.shape[0])
-    
-        return raw_chunks, chunk_weights
-
-    def compute_contacts(self, chunks, rtop, indices):
+    def compute_contacts(self, traj, top, rtop, indices, 
+                         chunk_size=1000, strideit=False, slf=0.1):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
            of each other.
 
         Parameters
         -------------
-        chunks : list of NumPy arrays
-               Each array contains the coordinates from a chunk of the MD
-               trajectory and is of shape [n_frames, n_atoms, 3]
+        traj : string
+               Path to trajectory file
+        top : string
+               Path to topology file
         rtop : Topology.rtop object
         indices : array-like
                Array of atom indices 
+        chunk_size : int
+               How many frames to process at one time
+        strideit : bool
+               Whether to configure the stride argument so that only a 
+               percentage of the total trajectory is used
+        slf : float
+               Percentage of the total trajectory - used when strideit == True
 
         Returns
         -------------
@@ -459,18 +464,26 @@ class DifferenceNetwork(Topology):
         
         """
         
-        # Currently, JIT and CUDA versions for computing
+        if strideit == True:
+            stride = self.configure_stride(traj, top, chunk_size=chunk_size, f=slf)
+        else:
+            stride = 1
+        
+        # Currently, CUDA versions for computing
         # contacts do not support systems containing more than 16,000 atoms.
         # Working on a fix for this...
             
         residues = [list(rtop[i].keys()) for i in rtop]
-        tframes = sum([i.shape[0] for i in chunks])
         rank = len(residues)
         c = np.zeros(shape=(rank, rank))
-
-        for chunk in chunks:
-            for frame in chunk:
+        tframes = 0
+        
+        for chunk in md.iterload(traj, top=top, chunk=chunk_size,
+                                 stride=stride, atom_indices=indices):
+            coords = chunk.xyz
+            for frame in coords:
                 tst.contacts_by_frame(frame, residues, c)
+            tframes += coords.shape[0]
         
         c /= float(tframes)
         
@@ -533,7 +546,7 @@ class DifferenceNetwork(Topology):
         
         return diff
 
-    def build_network(self, cutoff=0.90, chunk_size=100, stride=1, enable_cuda=False):
+    def build_network(self, cutoff=0.90, chunk_size=100, strideit=False, slf=0.1):
         """Low-level API that builds the network
         
         Parameters
@@ -542,11 +555,12 @@ class DifferenceNetwork(Topology):
            Probability cutoff for determining persistent contacts
         chunk_size : int
             Number of frames to process at one time
-        stride : int
-            Number of frames to skip when processing
-        enable_cuda : bool
-            Whether to offload contacts calculation onto an available
-            GPU.
+        strideit : bool
+            Configure stride to only use a percentage of the total
+            trajectory
+        slf : float
+            Percentage of the total trajectory - used with strideit argument
+        
             
         Returns
         ------------
@@ -559,12 +573,15 @@ class DifferenceNetwork(Topology):
         states = []
         
         for i in range(len(self.topFiles)):
+            
             current_indices = np.asarray(self.indices[i])
-            chunks, _ = self.process_traj(self.trajs[i], self.topFiles[i],
-                                          current_indices, chunk_size=chunk_size,
-                                          stride=stride)
-            state = self.compute_contacts(chunks, self.rtops[i], current_indices, 
-                                          enable_cuda=enable_cuda)
+            current_top = self.topFiles[i]
+            current_traj = self.trajFiles[i]
+            current_rtop = self.rtops[i]
+            
+            state = self.compute_contacts(current_traj, current_top, current_rtop, 
+                                          current_indices, chunk_size, strideit=strideit, 
+                                          slf=slf)
             states.append(state)
         
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff)
