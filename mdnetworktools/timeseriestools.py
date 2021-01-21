@@ -135,7 +135,7 @@ def _minwdist(c1, c2):
 			min_d = tmp_d
 	return min_d
 
-def contacts_by_chunk2(frame, residues, c):
+def contacts_by_frame(frame, residues, c):
 	for i in range(len(residues)-2):
 		res1 = frame[residues[i]]
 		for j in range(i+2, len(residues)):
