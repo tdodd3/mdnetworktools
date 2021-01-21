@@ -145,7 +145,7 @@ class DrawObject(Topology):
         t.close()
         FILE.close()
 
-    def write_chimera_session(self, commFile, ncomms):
+    def write_chimera_session(self, ncomms, commFile="communities.dat"):
 
         writecommunities(commFile, ncomms)
         t = open("communities{}.py".format(ncomms), "w")
