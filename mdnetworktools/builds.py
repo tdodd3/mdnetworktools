@@ -19,6 +19,7 @@ import numpy as np
 import mdtraj as md
 import timeseriestools as tst
 import math
+import time
 from _logger import LOG
 from scipy.spatial.distance import pdist, squareform
 
@@ -104,6 +105,12 @@ class DynamicNetwork(Topology):
             self.ref = md.load_pdb(ref)
             topology = md.load(ref).topology
             self.ref_indices = topology.select('name CA or name P')
+            
+        self.log._startup()
+        params = {"Topology": topFile, "Trajectory": trajFile, 
+                  "Number of atoms": len(indices),
+                  "Number of residues": len(list(self.rtop.keys()))}
+        self.log._logit((0,0), params=params)
 
     def com_coords(self, coords):
         """Computes the center of mass for each residue.
@@ -186,6 +193,10 @@ class DynamicNetwork(Topology):
             
     
         """
+        
+        start = time.time()
+        self.log._logit((2,4))
+        
         residues = list(self.rtop.keys())
         rank = len(residues)
         avg_dists = None
@@ -222,6 +233,8 @@ class DynamicNetwork(Topology):
                 avg_dist_matrix[j][r] = min_d
         
         del dist_matrix
+        
+        self.log._timing(4, round(time.time()-start,3))
         
         return avg_dist_matrix 
 
@@ -285,6 +298,9 @@ class DynamicNetwork(Topology):
 
         """
         
+        start = time.time()
+        self.log._logit((2,5))
+        
         if enable_cuda == True:
            import utilCUDA as uc
 
@@ -309,6 +325,8 @@ class DynamicNetwork(Topology):
         if enable_cuda == True and log == True:
            self.corr = -np.log(np.abs(self.corr))
            self.corr[self.corr == np.inf] = 0.0
+            
+        self.log._timing(5, round(time.time()-start,3))
 
     def postprocess(self, scheme='i+1'):
         """Remove correlations that correspond to the scheme
@@ -364,30 +382,41 @@ class DynamicNetwork(Topology):
         
         """
         
+        start = time.time()
+        params = {"Chunk size": chunk_size, "Stride": stride,
+                  "Align": align, "Cutoff": cutoff, "Scheme": scheme,
+                  "Enable CUDA": enable_cuda}
+        self.log._logit((1,7), params)
+        
         self.dist_matrix = self.compute_avg_dist_matrix(chunk_size=chunk_size,
                                                        stride=stride)
         
         self.process_input(chunk_size=chunk_size, stride=stride, align=align)
         self.compute_correlation_matrix(log=True, enable_cuda=enable_cuda)
         
+        self.log._generic("Saving distance and correlation matrices")
         np.savetxt("dist.dat", self.dist_matrix, fmt="%0.5f")
         np.savetxt("corr.dat", self.corr, fmt="%0.5f")
         
         # Modify the distance matrix to include only distances
         # within the cutoff
+        self.log._generic("Converting distance matrix to contacts and saving to file")
         self.dist_matrix[self.dist_matrix > cutoff] = 0.0
         self.dist_matrix[self.dist_matrix != 0.0] = 1.0
         np.savetxt("contactmap.dat", self.dist_matrix, fmt="%0.5f")
         
+        self.log._generic("Processing scheme and saving network to file")
         if scheme != 'all':
            self.postprocess(scheme=scheme)
         self.network = self.dist_matrix * self.corr
         np.savetxt("network.dat", self.network, fmt="%0.5f")
+        
+        self.log._timing(7, round(time.time()-start,3))
 
 class DifferenceNetwork(Topology):
     """Builds the network from the input topology and trajectories
     using the difference in persistent contacts between each input. Note 
-    that multiple input trajectories are neccessary for this calculation to succeed.
+    that multiple input trajectories are necessary for this calculation to succeed.
     Additionally, all trajectories must have the same number of atoms. In some cases,
     this means that prepocessing is required to ensure that a single topology can be
     employed across every input trajectory.
@@ -409,6 +438,15 @@ class DifferenceNetwork(Topology):
         self.trajFiles = trajFiles
         super(DifferenceNetwork, self).__init__(top)
         self.rtop, self.indices = self.init_top()
+        
+        self.log = LOG("loggy.log")
+        self.log._startup()
+        params = {"Topology": top, "Number of atoms": len(indices),
+                  "Number of residues": len(list(self.rtop.keys()))}
+        for x in range(self.trajFiles):
+            t = self.trajFiles[x]
+            params["Trajectory {}".format(x+1)] = t
+        self.log._logit((0,1), params=params)
          
     def configure_stride(self, traj, chunk_size, f=0.1):
         """Reconfigures the stride argument so that only a 
@@ -466,6 +504,9 @@ class DifferenceNetwork(Topology):
         
         """
         
+        start = time.time()
+        self.log._logit((2,6))
+        
         if strideit == True:
             stride = self.configure_stride(traj, chunk_size=chunk_size, f=slf)
         else:
@@ -489,6 +530,8 @@ class DifferenceNetwork(Topology):
         
         c /= float(tframes)
         
+        self.log._timing(6, round(time.time()-start,3))
+        
         return c
 
     def consensus_network(self, states, cutoff):
@@ -509,6 +552,9 @@ class DifferenceNetwork(Topology):
             
         """
         
+        start = time.time()
+        self.log._logit((2,8))
+        
         consensus_matrix = np.zeros(shape=states[0].shape)
         
         for state in states:
@@ -522,6 +568,8 @@ class DifferenceNetwork(Topology):
         # Remove weights and assign 1 and 0 accordingly
         consensus_matrix[zeros] = 0.0
         consensus_matrix[ones] = 1.0
+        
+        self.log._timing(8, round(time.time()-start,3))
         
         return consensus_matrix
 
@@ -541,10 +589,15 @@ class DifferenceNetwork(Topology):
             
         """
         
+        start = time.time()
+        self.log._logit((2,9))
+        
         diff = states[0]
         
         for i in range(1, len(states)):
             diff -= states[i]
+            
+        self.log._timing(9, round(time.time()-start,3))
         
         return diff
 
@@ -572,6 +625,12 @@ class DifferenceNetwork(Topology):
         
         """
         
+        start = time.time()
+        params = {"Cutoff": cutoff, "Chunk size": chunk_size,
+                  "stride": strideit, "%":slf, 
+                  "Number of states": len(self.trajFiles)}
+        self.log._logit((1,7), params=params)
+        
         states = []
         
         for i in range(len(self.trajFiles)):
@@ -582,12 +641,15 @@ class DifferenceNetwork(Topology):
                                           self.indices, chunk_size, strideit=strideit, 
                                           slf=slf)
             states.append(state)
-        
+       
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff)
         self.difference_matrix = self.diff_network(states)
         
+        self.log._generic("Saving consensus and difference matrices to file")
         np.savetxt("consensus.dat", self.consensus_matrix, fmt="%0.0f")
         np.savetxt("difference.dat", self.difference_matrix, fmt="%0.5f")
+        
+        self.log._timing(7, round(time.time()-start, 3))
                 
     def get_communities(self, commFile, offset):
         """Function for loading communities from a txt file.
