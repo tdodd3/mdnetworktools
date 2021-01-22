@@ -21,6 +21,8 @@ import networkx.algorithms.community as nac
 from operator import itemgetter
 from itertools import count
 from heapq import heappush, heappop
+from _logger import LOG
+import time
 
 class GirvanNewman(object):
 	"""Executes the Girvan-Newman algorithm to subdivide
@@ -38,7 +40,9 @@ class GirvanNewman(object):
 	def __init__(self, network):
 		self.network = network
 		self.G = nx.from_numpy_matrix(network)
-	
+		self.log = LOG("loggy.log", overwrite=False)
+		
+		self.log._startup()
 	#### Helper functions ####
 	
 	# Betweenness
@@ -106,6 +110,10 @@ class GirvanNewman(object):
 			
 		"""
 		
+		start = time.time()
+		params = {"Weight": weight, "Number of communities": ncomms}
+		self.log._logit((0,2), params=params)
+		
 		self._remove() # Remove loosely-connected components from the graph
 		t = open("communities.dat", "w")
 		bestQ = 0.0
@@ -133,6 +141,9 @@ class GirvanNewman(object):
 					t.write("\n")
 			if self.G.number_of_edges() == 0:
 				break
+				
+		self.log._timing(2, round(time.time()-start))
+		
 		t.close()
 
 class PathBuffer(object):
@@ -184,6 +195,9 @@ class SOAN(PathBuffer):
 		self.G = nx.from_numpy_matrix(self.A)
 		self.s = s - 1 # convert to index
 		self.t = t - 1 # convert to index
+		self.log = LOG("loggy.log", overwrite=False)
+		
+		self.log._startup()
 
 	def dijkstra(self, A, s, t, ignore_nodes=None, ignore_edges=None):
 		"""
@@ -459,11 +473,26 @@ class SOAN(PathBuffer):
 		
 		"""
 		
+		params = {"Level": level, "Number of Paths": numpaths}
+		self.log._logit((0,3), params=params)
+		
+		self.log._generic("Searching for optimal path between {} and {}".format(self.s+1, self.t+1))
+		s1 = time.time()
 		self.find_opt_path()
+		self.log._timing(10, round(time.time()-s1, 3))
+		
+		s2 = time.time()
+		self.log._generic("Creating subgraph at level {} of the optimal path".format(level))
 		SadjM, mapping, reversemapping, \
 		unmapped_paths, mapped_t = self.create_subgraph(level)
+		self.log._timing(11, round(time.time()-s2, 3))
+		
+		self.log_generic("Searching {} suboptimal paths in subgraph".format(numpaths))
+		s3 = time.time()
 		paths = self.find_paths_from_graph(SadjM, numpaths, mapped_t, 
 						[mapping[x] for x in unmapped_paths[0]])
+		self.log._timing(12, round(time.time()-s3, 3))
+		
 		mapped_paths = []
 		for p in paths:
 			mapped_paths.append([reversemapping[x] for x in p])
