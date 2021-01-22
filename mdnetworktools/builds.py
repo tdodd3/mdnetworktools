@@ -18,6 +18,7 @@
 import numpy as np
 import mdtraj as md
 import timeseriestools as tst
+import math
 from scipy.spatial.distance import pdist, squareform
 
 class Topology(object):
@@ -378,7 +379,10 @@ class DynamicNetwork(Topology):
 class DifferenceNetwork(Topology):
     """Builds the network from the input topology and trajectories
     using the difference in persistent contacts between each input. Note 
-    that multiple inputs trajectories are neccessary for this calculation to succeed.
+    that multiple input trajectories are neccessary for this calculation to succeed.
+    Additionally, all trajectories must have the same number of atoms. In some cases,
+    this means that prepocessing is required to ensure that a single topology can be
+    employed across every input trajectory.
     
     See Yao, X. Q., Momin, M., & Hamelberg, D. (2019). Journal of chemical information and modeling, 59(7), 3222-3228.
     
@@ -394,7 +398,7 @@ class DifferenceNetwork(Topology):
     
     def __init__(self, top, trajFiles):
         self.top = top
-        self.trajs = trajFiles
+        self.trajFiles = trajFiles
         super(DifferenceNetwork, self).__init__(top)
         self.rtop, self.indices = self.init_top()
          
