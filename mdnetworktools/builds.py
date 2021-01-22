@@ -108,7 +108,7 @@ class DynamicNetwork(Topology):
             
         self.log._startup()
         params = {"Topology": topFile, "Trajectory": trajFile, 
-                  "Number of atoms": len(indices),
+                  "Number of atoms": len(self.indices),
                   "Number of residues": len(list(self.rtop.keys()))}
         self.log._logit((0,0), params=params)
 
