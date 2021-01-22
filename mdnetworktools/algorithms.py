@@ -318,7 +318,7 @@ class SOAN(PathBuffer):
 			return self.get_all_neighbors(self.opt_path)
 		else:
 			master = []
-			master.append(self.get_all_neigbors(self.opt_path))
+			master.append(self.get_all_neighbors(self.opt_path))
 			count = 0
 			while count < self.level:
 				master.append(self.get_all_neighbors(master[count]))
