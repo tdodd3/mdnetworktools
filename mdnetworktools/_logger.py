@@ -32,10 +32,14 @@ class LOG(object):
 				5: "Cross-Correlations...", 6: "Contacts...", 7: "Network...",
 				8: "Consensus matrix...", 9: "Difference matrix..."}
 		self.prefx = {0: "Initiating ", 1: "Building ", 2: "Computing "}
+		self.NAME = "#		MDNetworkTools                   #"
 		
 	def _startup(self):
 		current_time = str(datetime.now())
 		logging.info(current_time)
+		logging.info(self.footer)
+		logging.info(self.NAME)
+		logging.info(self.footer)
 		
 	def _logit(self, m_type, params=None):
 		message = self.prefx[m_type[0]] + self.objs[m_type[1]]
