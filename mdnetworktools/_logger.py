@@ -31,15 +31,15 @@ class LOG(object):
 		logging.basicConfig(filename=logName, filemode='a',
 					format='%(message)s', level=logging.INFO)
 							
-		self.inputheader = "################ Input Parameters ################"
-		self.footer = "##################################################"
+		self.inputheader = "#################### Input Parameters ####################"
+		self.footer = "##########################################################"
 		self.attrib = "################## Attributes ####################"
 		self.objs = {0: "Dynamic Network...", 1: "Difference Network...",
 				2: "Girvan-Newman...", 3: "SOAN...", 4: "Average Distances...",
 				5: "Cross-Correlations...", 6: "Contacts...", 7: "Network...",
 				8: "Consensus matrix...", 9: "Difference matrix..."}
 		self.prefx = {0: "Initiating ", 1: "Building ", 2: "Computing "}
-		self.NAME = "#		MDNetworkTools                   #"
+		self.NAME= "#                    MDNetworkTools                      #"
 		
 	def _startup(self):
 		current_time = str(datetime.now())
