@@ -376,34 +376,28 @@ class DynamicNetwork(Topology):
         np.savetxt("network.dat", self.network, fmt="%0.5f")
 
 class DifferenceNetwork(Topology):
-    """Builds the network from the input topologies and trajectories
+    """Builds the network from the input topology and trajectories
     using the difference in persistent contacts between each input. Note 
-    that multiple inputs are neccessary for this calculation to succeed.
+    that multiple inputs trajectories are neccessary for this calculation to succeed.
     
     See Yao, X. Q., Momin, M., & Hamelberg, D. (2019). Journal of chemical information and modeling, 59(7), 3222-3228.
     
     Parameters
     ------------
-    topFiles : list 
-        Each item in the list is a string with the path to 
-        each topology file
+    topFile : string 
+        Path to topology file
     trajFiles : list
         Each item in the list is a string with the path to 
         each trajectory file
     
     """
     
-    def __init__(self, topFiles, trajFiles):
+    def __init__(self, topFile, trajFiles):
         self.topFiles = topFiles
         self.trajs = trajFiles
-        self.rtops = []
-        self.indices = []
-        for top in topFiles:
-            super(DifferenceNetwork, self).__init__(top)
-            r, i = self.init_top()
-            self.rtops.append(r)
-            self.indices.append(i)
-    
+        super(DifferenceNetwork, self).__init__(top)
+        self.rtop, self.indices = self.init_top()
+         
     def configure_stride(self, traj, top, chunk_size, f=0.1):
         """Reconfigures the stride argument so that only a 
         percentage of the total trajectory is used for analysis.
@@ -572,15 +566,12 @@ class DifferenceNetwork(Topology):
         
         states = []
         
-        for i in range(len(self.topFiles)):
+        for i in range(len(self.trajFiles)):
             
-            current_indices = np.asarray(self.indices[i])
-            current_top = self.topFiles[i]
             current_traj = self.trajFiles[i]
-            current_rtop = self.rtops[i]
             
-            state = self.compute_contacts(current_traj, current_top, current_rtop, 
-                                          current_indices, chunk_size, strideit=strideit, 
+            state = self.compute_contacts(current_traj, self.topFile, self.rtop, 
+                                          self.indices, chunk_size, strideit=strideit, 
                                           slf=slf)
             states.append(state)
         
