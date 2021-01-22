@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-import time
 
 class LOG(object):
 
