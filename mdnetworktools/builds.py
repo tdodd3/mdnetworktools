@@ -386,7 +386,7 @@ class DynamicNetwork(Topology):
         params = {"Chunk size": chunk_size, "Stride": stride,
                   "Align": align, "Cutoff": cutoff, "Scheme": scheme,
                   "Enable CUDA": enable_cuda}
-        self.log._logit((1,7), params)
+        self.log._logit((1,7), params=params)
         
         self.dist_matrix = self.compute_avg_dist_matrix(chunk_size=chunk_size,
                                                        stride=stride)
