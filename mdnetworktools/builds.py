@@ -97,7 +97,7 @@ class DynamicNetwork(Topology):
         self.rtop, self.indices = self.init_top()
         self.trajFile = trajFile
         self.chunks = []
-        self.log = LOG("loggy.log")
+        self.log = LOG("loggy.log", overwrite=True)
         # When ref != None, this indicates that the trajectory
         # has not been aligned and will be prior to the 
         # calculation of the covariance or correlation matrix
