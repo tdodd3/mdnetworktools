@@ -441,9 +441,9 @@ class DifferenceNetwork(Topology):
         
         self.log = LOG("loggy.log")
         self.log._startup()
-        params = {"Topology": top, "Number of atoms": len(indices),
+        params = {"Topology": top, "Number of atoms": len(self.indices),
                   "Number of residues": len(list(self.rtop.keys()))}
-        for x in range(self.trajFiles):
+        for x in range(len(self.trajFiles)):
             t = self.trajFiles[x]
             params["Trajectory {}".format(x+1)] = t
         self.log._logit((0,1), params=params)
