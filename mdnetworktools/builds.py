@@ -392,13 +392,13 @@ class DifferenceNetwork(Topology):
     
     """
     
-    def __init__(self, topFile, trajFiles):
-        self.topFiles = topFiles
+    def __init__(self, top, trajFiles):
+        self.top = top
         self.trajs = trajFiles
         super(DifferenceNetwork, self).__init__(top)
         self.rtop, self.indices = self.init_top()
          
-    def configure_stride(self, traj, top, chunk_size, f=0.1):
+    def configure_stride(self, traj, chunk_size, f=0.1):
         """Reconfigures the stride argument so that only a 
         percentage of the total trajectory is used for analysis.
         
@@ -406,8 +406,6 @@ class DifferenceNetwork(Topology):
         ------------
         traj : string
             Path to trajectory file
-        top : string
-            Path to topology file
         chunk_size : int
             Number of frames to process at one time
         f : float
@@ -421,14 +419,14 @@ class DifferenceNetwork(Topology):
             
         tframes = 0
         
-        for chunk in md.iterload(traj, top=top, chunk=chunk_size):
+        for chunk in md.iterload(traj, top=self.top, chunk=chunk_size):
                 tframes += chunk.xyz.shape[0]
         t = float(tframes) * f
         stride = int(math.ceil(tframes/t))
         
         return stride
 
-    def compute_contacts(self, traj, top, rtop, indices, 
+    def compute_contacts(self, traj, rtop, indices, 
                          chunk_size=1000, strideit=False, slf=0.1):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
@@ -438,8 +436,6 @@ class DifferenceNetwork(Topology):
         -------------
         traj : string
                Path to trajectory file
-        top : string
-               Path to topology file
         rtop : Topology.rtop object
         indices : array-like
                Array of atom indices 
@@ -459,7 +455,7 @@ class DifferenceNetwork(Topology):
         """
         
         if strideit == True:
-            stride = self.configure_stride(traj, top, chunk_size=chunk_size, f=slf)
+            stride = self.configure_stride(traj, chunk_size=chunk_size, f=slf)
         else:
             stride = 1
         
@@ -472,7 +468,7 @@ class DifferenceNetwork(Topology):
         c = np.zeros(shape=(rank, rank))
         tframes = 0
         
-        for chunk in md.iterload(traj, top=top, chunk=chunk_size,
+        for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
                                  stride=stride, atom_indices=indices):
             coords = chunk.xyz
             for frame in coords:
@@ -570,7 +566,7 @@ class DifferenceNetwork(Topology):
             
             current_traj = self.trajFiles[i]
             
-            state = self.compute_contacts(current_traj, self.topFile, self.rtop, 
+            state = self.compute_contacts(current_traj, self.rtop, 
                                           self.indices, chunk_size, strideit=strideit, 
                                           slf=slf)
             states.append(state)
