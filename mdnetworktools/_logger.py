@@ -37,7 +37,8 @@ class LOG(object):
 		self.objs = {0: "Dynamic Network...", 1: "Difference Network...",
 				2: "Girvan-Newman...", 3: "SOAN...", 4: "Average Distances...",
 				5: "Cross-Correlations...", 6: "Contacts...", 7: "Network...",
-				8: "Consensus matrix...", 9: "Difference matrix..."}
+				8: "Consensus matrix...", 9: "Difference matrix...",
+			    	10: "Optimal Path", 11: "Subgraph", 12: "Suboptimal paths"}
 		self.prefx = {0: "Initiating ", 1: "Building ", 2: "Computing "}
 		self.NAME= "#                    MDNetworkTools                      #"
 		
