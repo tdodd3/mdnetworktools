@@ -487,7 +487,7 @@ class SOAN(PathBuffer):
 		unmapped_paths, mapped_t = self.create_subgraph(level)
 		self.log._timing(11, round(time.time()-s2, 3))
 		
-		self.log_generic("Searching {} suboptimal paths in subgraph".format(numpaths))
+		self.log._generic("Searching {} suboptimal paths in subgraph".format(numpaths))
 		s3 = time.time()
 		paths = self.find_paths_from_graph(SadjM, numpaths, mapped_t, 
 						[mapping[x] for x in unmapped_paths[0]])
