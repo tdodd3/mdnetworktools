@@ -19,6 +19,7 @@ import numpy as np
 import mdtraj as md
 import timeseriestools as tst
 import math
+from _logger import LOG
 from scipy.spatial.distance import pdist, squareform
 
 class Topology(object):
@@ -95,6 +96,7 @@ class DynamicNetwork(Topology):
         self.rtop, self.indices = self.init_top()
         self.trajFile = trajFile
         self.chunks = []
+        self.log = LOG("loggy.log")
         # When ref != None, this indicates that the trajectory
         # has not been aligned and will be prior to the 
         # calculation of the covariance or correlation matrix
@@ -171,8 +173,8 @@ class DynamicNetwork(Topology):
         self.com_data = com_data
         chunk_weights = np.asarray(chunk_weights)
         self.chunk_weights = chunk_weights / float(np.max(chunk_weights))
-        self.chunk_size = chunk_size
-        self.stride = stride
+        #self.chunk_size = chunk_size
+        #self.stride = stride
         
     def compute_avg_dist_matrix(self, chunk_size=100, stride=1):
         """Compute the average distance between selected residues
@@ -190,7 +192,7 @@ class DynamicNetwork(Topology):
         iter_ = 0
         #for coords in self.chunks:
         for chunk in md.iterload(self.trajFile, top=self.topFile,
-                                 chunk=self.chunk_size, stride=self.stride,
+                                 chunk=chunk_size, stride=stride,
                                  atom_indices=self.indices):
 
             coords = chunk.xyz
@@ -205,6 +207,8 @@ class DynamicNetwork(Topology):
         dist_matrix = squareform(dist_matrix)
         dist_matrix = dist_matrix * 10 # convert from nm to angstroms
         
+        del avg_dists
+        
         # Find the closest distance between heavy atoms in each 
         # residue pair - this is currently the bottleneck.
         
@@ -216,7 +220,9 @@ class DynamicNetwork(Topology):
                 min_d = np.min(np.ravel(dist_matrix[res1][:, res2]))
                 avg_dist_matrix[r][j] = min_d
                 avg_dist_matrix[j][r] = min_d
-       
+        
+        del dist_matrix
+        
         return avg_dist_matrix 
 
     def compute_covariance_matrix(self, enable_cuda=False):
@@ -241,7 +247,7 @@ class DynamicNetwork(Topology):
            import utilCUDA as uc
 
         rank = len(list(self.rtop.keys()))
-        self.cov = np.zeros(shape=(rank, rank))
+        covar = np.zeros(shape=(rank, rank))
         iter_ = 0
         w_sum = 0
         for chunk in self.com_data:
@@ -249,10 +255,12 @@ class DynamicNetwork(Topology):
                cov = uc.compute_covariances_CUDA(chunk)
             else:
                cov = tst.cov(chunk[0], chunk[1])
-            self.cov += cov
+            covar += cov
             w_sum += (1*self.chunk_weights[iter_])
             iter_ += 1
-        self.cov /= w_sum
+        covar /= w_sum
+        
+        return covar
 
     def compute_correlation_matrix(self, log=False, enable_cuda=False):
         """Computes the correlation between all residues in the processed
@@ -302,7 +310,7 @@ class DynamicNetwork(Topology):
            self.corr = -np.log(np.abs(self.corr))
            self.corr[self.corr == np.inf] = 0.0
 
-    def postprocess(self, scheme='i+2'):
+    def postprocess(self, scheme='i+1'):
         """Remove correlations that correspond to the scheme
            given. Possible schemes are only i+n, where n=1,2,3...
  
@@ -327,7 +335,7 @@ class DynamicNetwork(Topology):
                 self.corr[k][i] = 0.0
 
     def build_network(self, chunk_size=100, stride=1, align=False, 
-                      cutoff=4.5, scheme='all', enable_cuda=False):
+                      cutoff=4.5, scheme='i+1', enable_cuda=False):
         """Low-level API that builds the network from the pre-processed
         chunks.
         
