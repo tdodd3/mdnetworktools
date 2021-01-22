@@ -21,12 +21,12 @@ from datetime import datetime
 
 class LOG(object):
 
-	def __init__(self, logName):
-		
-		try:
-			os.remove(logName)
-		except OSError:
-			pass
+	def __init__(self, logName, overwrite=False):
+		if overwrite == True:
+			try:
+				os.remove(logName)
+			except OSError:
+				pass
 		
 		logging.basicConfig(filename=logName, filemode='a',
 					format='%(message)s', level=logging.INFO)
