@@ -439,7 +439,7 @@ class DifferenceNetwork(Topology):
         super(DifferenceNetwork, self).__init__(top)
         self.rtop, self.indices = self.init_top()
         
-        self.log = LOG("loggy.log")
+        self.log = LOG("loggy.log", overwrite=True)
         self.log._startup()
         params = {"Topology": top, "Number of atoms": len(self.indices),
                   "Number of residues": len(list(self.rtop.keys()))}
