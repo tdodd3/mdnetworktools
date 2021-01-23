@@ -627,7 +627,7 @@ class DifferenceNetwork(Topology):
         
         start = time.time()
         params = {"Cutoff": cutoff, "Chunk size": chunk_size,
-                  "stride": strideit, "%":slf, 
+                  "stride": strideit, "Stride factor":slf, 
                   "Number of states": len(self.trajFiles)}
         self.log._logit((1,7), params=params)
         
