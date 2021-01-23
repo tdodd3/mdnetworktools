@@ -199,7 +199,7 @@ class DynamicNetwork(Topology):
         
         residues = list(self.rtop.keys())
         rank = len(residues)
-        avg_dists = None
+        avg_coords = None
         iter_ = 0
         #for coords in self.chunks:
         for chunk in md.iterload(self.trajFile, top=self.topFile,
@@ -208,17 +208,17 @@ class DynamicNetwork(Topology):
 
             coords = chunk.xyz
             sum_coords = np.sum(coords, axis=0)
-            if avg_dists is None:
-                avg_dists = sum_coords
+            if avg_coords is None:
+                avg_coords = sum_coords
             else:
-                avg_dists += sum_coords
+                avg_coords += sum_coords
             iter_ += coords.shape[0]
-        avg_dists = avg_dists / float(iter_)
-        dist_matrix = pdist(avg_dists, metric='euclidean')
+        avg_coords =/ float(iter_)
+        dist_matrix = pdist(avg_coords, metric='euclidean')
         dist_matrix = squareform(dist_matrix)
         dist_matrix = dist_matrix * 10 # convert from nm to angstroms
         
-        del avg_dists
+        del avg_coords
         
         # Find the closest distance between heavy atoms in each 
         # residue pair - this is currently the bottleneck.
