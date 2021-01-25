@@ -275,8 +275,8 @@ class DynamicNetwork(Topology):
         if enable_cuda == True:
            import utilCUDA as uc
 
-        rank = len(list(self.rtop.keys()))
-        covar = np.zeros(shape=(rank, rank))
+        #rank = len(list(self.rtop.keys()))
+        covar = np.zeros(shape=(self.nresidues, self.nresidues))
         iter_ = 0
         w_sum = 0
         for chunk in self.com_data:
@@ -320,8 +320,8 @@ class DynamicNetwork(Topology):
         if enable_cuda == True:
            import utilCUDA as uc
 
-        rank = len(list(self.rtop.keys()))
-        self.corr = np.zeros(shape=(rank, rank))
+        #rank = len(list(self.rtop.keys()))
+        self.corr = np.zeros(shape=(self.nresidues, self.nresidues))
         iter_ = 0
         w_sum = 0
         for chunk in self.com_data:
@@ -361,7 +361,7 @@ class DynamicNetwork(Topology):
 
         """
         interval = int(scheme.split('+')[-1])
-        rank = len(list(self.rtop.keys()))
+        rank = self.nresidues
         for i in range(rank-interval):
             ind = [i+j+1 for j in range(interval)]
             for k in ind:
@@ -457,12 +457,16 @@ class DifferenceNetwork(Topology):
         
         self.log = LOG("loggy.log", overwrite=True)
         self.log._startup()
-        params = {"Topology": top, "Number of atoms": len(self.indices),
-                  "Number of residues": len(list(self.rtop.keys()))}
+        params = {"Topology": top, "Number of atoms": self.natoms,
+                  "Number of residues": self.nresidues}
         for x in range(len(self.trajFiles)):
             t = self.trajFiles[x]
             params["Trajectory {}".format(x+1)] = t
         self.log._logit((0,1), params=params)
+        
+        self.MEM_OK = True
+        if self.natoms > 15999:
+            self.MEM_OK = False
          
     def configure_stride(self, traj, chunk_size, f=0.1):
         """Reconfigures the stride argument so that only a 
@@ -492,8 +496,7 @@ class DifferenceNetwork(Topology):
         
         return stride
 
-    def compute_contacts(self, traj, rtop, indices, 
-                         chunk_size=1000, strideit=False, slf=0.1):
+    def compute_contacts(self, traj, chunk_size=1000, strideit=False, slf=0.1):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
            of each other.
@@ -502,9 +505,6 @@ class DifferenceNetwork(Topology):
         -------------
         traj : string
                Path to trajectory file
-        rtop : Topology.rtop object
-        indices : array-like
-               Array of atom indices 
         chunk_size : int
                How many frames to process at one time
         strideit : bool
@@ -532,16 +532,16 @@ class DifferenceNetwork(Topology):
         # contacts do not support systems containing more than 16,000 atoms.
         # Working on a fix for this...
             
-        residues = [list(rtop[i].keys()) for i in rtop]
-        rank = len(residues)
-        c = np.zeros(shape=(rank, rank))
+        #residues = [list(rtop[i].keys()) for i in rtop]
+        #rank = len(residues)
+        c = np.zeros(shape=(self.nresidues, self.nresidues))
         tframes = 0
         
         for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
-                                 stride=stride, atom_indices=indices):
+                                 stride=stride, atom_indices=self.indices):
             coords = chunk.xyz
             for frame in coords:
-                tst.contacts_by_frame(frame, residues, c)
+                tst.contacts_by_frame(frame, self.residues, c)
             tframes += coords.shape[0]
         
         c /= float(tframes)
@@ -653,9 +653,8 @@ class DifferenceNetwork(Topology):
             
             current_traj = self.trajFiles[i]
             
-            state = self.compute_contacts(current_traj, self.rtop, 
-                                          self.indices, chunk_size, strideit=strideit, 
-                                          slf=slf)
+            state = self.compute_contacts(current_traj, chunk_size, 
+                                          strideit=strideit, slf=slf)
             states.append(state)
        
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff)
