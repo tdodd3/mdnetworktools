@@ -243,8 +243,8 @@ class DynamicNetwork(Topology):
             
             # Generate batches and compute distances
             batches = gen_batches(self.residues, batchsize)
-            batch_distances(self.residues, batches, avg_dist_matrix, 
-                            avg_coords, cutoff=0.8)
+            batch_distances(self.residues, batches, avg_coords, 
+                            avg_dist_matrix, cutoff=0.8)
             
             del avg_coords
         
