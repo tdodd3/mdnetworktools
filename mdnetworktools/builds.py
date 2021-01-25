@@ -684,12 +684,13 @@ class DifferenceNetwork(Topology):
         
         return diff
 
-    def build_network(self, cutoff=0.90, chunk_size=100, strideit=False, slf=0.1):
+    def build_network(self, cutoff1=0.90, chunk_size=100, strideit=False, slf=0.1,
+                     enable_cuda=False, use_reference=False, index=0, cutoff2=1.5):
         """Low-level API that builds the network
         
         Parameters
         ------------
-        cutoff : float 
+        cutoff1 : float 
            Probability cutoff for determining persistent contacts
         chunk_size : int
             Number of frames to process at one time
@@ -698,7 +699,15 @@ class DifferenceNetwork(Topology):
             trajectory
         slf : float
             Percentage of the total trajectory - used with strideit argument
-        
+        enable_cuda : bool
+            Whether to use CUDA version for computing contacts
+        use_reference : bool
+            Whether to use reference frame for distance calculation
+        index : int
+            Frame number for reference calculation, only used when use_reference==True
+        cutoff2 : float
+            Distance in nanometers for computing distances in reference frame,
+            only used when use_reference == True
             
         Returns
         ------------
@@ -709,7 +718,7 @@ class DifferenceNetwork(Topology):
         """
         
         start = time.time()
-        params = {"Cutoff": cutoff, "Chunk size": chunk_size,
+        params = {"Cutoff": cutoff1, "Chunk size": chunk_size,
                   "stride": strideit, "Stride factor":slf, 
                   "Number of states": len(self.trajFiles)}
         self.log._logit((1,7), params=params)
@@ -721,7 +730,10 @@ class DifferenceNetwork(Topology):
             current_traj = self.trajFiles[i]
             
             state = self.compute_contacts(current_traj, chunk_size, 
-                                          strideit=strideit, slf=slf)
+                                          strideit=strideit, slf=slf,
+                                          enable_cuda=enable_cuda,
+                                          use_reference=use_reference,
+                                          index=index, cutoff=cutoff2)
             states.append(state)
        
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff)
