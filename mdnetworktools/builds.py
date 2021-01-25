@@ -220,7 +220,7 @@ class DynamicNetwork(Topology):
             else:
                 avg_coords += sum_coords
             iter_ += coords.shape[0]
-        avg_coords =/ float(iter_)
+        avg_coords /= float(iter_)
         
         if self.MEM_OK == True:
             dist_matrix = tst.scipy_dist(avg_coords)
