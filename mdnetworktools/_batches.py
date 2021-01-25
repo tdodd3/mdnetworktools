@@ -127,3 +127,41 @@ def batch_distances(residues, batch, coords, c, cutoff=0.45):
                                 _reduce(batchIds[i], batchIds[j],
                                         min1, min2, tmp_c, residues,
                                         c, cutoff=cutoff)
+                                
+                                
+def gen_nonzero(c):
+        w = []
+        for x in range(c.shape[0]):
+                j = c[:,x]
+                w.append(np.where(j != 0.0)[0])
+        return w
+
+def reduce2(residue1, residues2, ind1, w, distarr, c):
+        """Reduce subarray of all-atom distances to residue-level
+        contacts. The contact map, c, is modified in-place.
+        """
+        
+        # residue1 is dim1 and residues2 is dim2
+        res1 = np.subtract(residue1, np.min(residue1)) # indices in subarray
+        count = 0
+        for i in range(len(residues2)):
+                ind2 = w[i] # index in contact map c
+                r_b = residues2[i]
+                # Indices of residue2 in subarray
+                res2 = [j+count for j in range(len(r_b))]
+                min_d = np.min(distarr[res1][:, res2])
+                if min_d <= 0.45:
+                        c[ind1][ind2] += 1.0
+                        c[ind2][ind1] += 1.0
+                count += len(r_b)
+                
+def _accumulate(w, residues, coords, c):
+        """Determine distances from subset of batches and populate
+        the contact matrix with 0 or 1.
+        """
+        for i in range(len(w)):
+                subset = [residues[x] for x in w[i]]
+                batch1 = residues[i]
+                batch2 = np.hstack(subset)
+                d = nppdist(coords[batch1], coords[batch2])
+                _reduce2(batch1, subset, i, w[i], d, c)
