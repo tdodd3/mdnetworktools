@@ -517,8 +517,8 @@ class DifferenceNetwork(Topology):
                Whether to enable CUDA for computing contacts
         use_reference : bool
                Whether to compute all distances on a single frame of the trajectory
-               and then filter out residues outside of a cutoff. These residues are
-               then used to compute contacts for the entire trajectory.
+               and then filter out residues outside of a cutoff. The remaining residues 
+               are then used to compute contacts for the entire trajectory.
         index : int
                Reference frame of trajectory. Only used if use_reference == True
         cutoff : float
@@ -608,7 +608,7 @@ class DifferenceNetwork(Topology):
                     _accumulate(w, frame, self.residues, c)
                 tframes += coords.shape[0]
               
-        # Sanity check - in case we counted contacts twice!
+        # Check, in case we've counted contacts twice!
         c[c > tframes] = tframes
         c /= float(tframes)
         
