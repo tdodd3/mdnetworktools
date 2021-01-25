@@ -22,6 +22,7 @@
 
 import numpy as np
 import math
+from scipy.spatial.distance import pdist, squareform
 from numba import jit
 
 # Pairwise dot products
@@ -122,6 +123,27 @@ def contacts_by_chunk(coords, cutoff=0.45):
 		contacts += dists
 	return contacts
 
+# SCIPY distance
+def scipy_dist(avg_coords):
+	dist_matrix = pdist(avg_coords, metric='euclidean')
+	dist_matrix = squareform(dist_matrix)
+	dist_matrix = dist_matrix * 10 # convert from nm to angstroms
+	return dist_matrix
+
+# Reduction from all-atom distances to residue level distances
+def _squeeze(dist_matrix, avg_dist_matrix, residues)
+	# Find the closest distance between heavy atoms in each 
+        # residue pair - this is currently the bottleneck.
+        
+        rank = len(residues)
+        for r in range(rank-1):
+            res1 = residues[i]
+            for j in range(r+1, rank):
+                res2 = residues[j]
+                min_d = np.min(np.ravel(dist_matrix[res1][:, res2]))
+                avg_dist_matrix[r][j] = min_d
+                avg_dist_matrix[j][r] = min_d
+	
 # Slower version for larger systems (>16,000 atoms)
 @jit(nopython=True, cache=True)
 def _minwdist(c1, c2):
