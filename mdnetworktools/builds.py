@@ -587,6 +587,7 @@ class DifferenceNetwork(Topology):
             batchsize = int(math.ceil(self.natoms*0.126))
             
             # Generate batches and compute distances for reference frame
+            self.log._generic("Computing all distances for reference frame {}".format(index))
             batches = gen_batches(self.residues, batchsize)
             batch_distances(self.residues, batches, coords, 
                             tmp_c, cutoff=cutoff)
@@ -597,6 +598,8 @@ class DifferenceNetwork(Topology):
             del coords
             del frame
             del tmp_c
+            
+            self.log._generic("Finished with reference frame, proceeding with full trajectory")
             
             for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
                                      stride=stride, atom_indices=self.indices):
