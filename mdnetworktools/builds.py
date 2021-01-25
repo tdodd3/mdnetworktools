@@ -576,8 +576,34 @@ class DifferenceNetwork(Topology):
         # using a reference frame and then use a cutoff to determine which residue
         # pairs will be included in the calculation for the entire trajectory.
         if self.MEM_OK == False and use_reference == True:
+            from _batches import gen_batches, batch_distances, _accumulate, gen_nonzero
             
+            # Load reference frame coordinates
             frame = md.load_frame(traj, index, top=self.top, atom_indices=self.indices)
+            coords = frame.xyz[0]
+            tmp_c = np.zeros(shape=(self.nresidues, self.nresidues))
+            
+            # Determine ideal batch size
+            batchsize = int(math.ceil(self.natoms*0.126))
+            
+            # Generate batches and compute distances for reference frame
+            batches = gen_batches(self.residues, batchsize)
+            batch_distances(self.residues, batches, coords, 
+                            tmp_c, cutoff=cutoff)
+            
+            # Nonzero elements from reference frame calculation
+            w = gen_nonzero(tmp_c)
+            
+            del coords
+            del frame
+            del tmp_c
+            
+            for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
+                                     stride=stride, atom_indices=self.indices):
+                coords = chunk.xyz
+                for frame in coords:
+                    _accumulate(w, self.residues, c)
+                
         c /= float(tframes)
         
         self.log._timing(6, round(time.time()-start,3))
