@@ -602,7 +602,7 @@ class DifferenceNetwork(Topology):
                                      stride=stride, atom_indices=self.indices):
                 coords = chunk.xyz
                 for frame in coords:
-                    _accumulate(w, self.residues, c)
+                    _accumulate(w, frame, self.residues, c)
                 
         c /= float(tframes)
         
