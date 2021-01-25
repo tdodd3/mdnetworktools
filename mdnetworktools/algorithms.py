@@ -118,7 +118,6 @@ class GirvanNewman(object):
 		t = open("communities.dat", "w")
 		bestQ = 0.0
 		diff = 0.0
-		n_partitions = 0
 		n_communities = 0
 		while n_communities < ncomms:
 			self.gnStep(weight=weight)
@@ -127,14 +126,14 @@ class GirvanNewman(object):
 			Q = self.compute_modularity(ccomps)
 			diff = abs(bestQ - Q)
 			n_communities = len(ccomps)
-			n_partitions += 1
 			if Q > bestQ:
 				bestQ = Q
 				bestcomps = ccomps
-				t.write("Difference in modularity is " + \
-					"{}\n".format(diff))
+				self.log._generic("Partition {}: Modularity: {} " + \
+						  "Difference from previous {}".format(n_communities,
+										      Q, diff))
 			if n_communities > 1:
-				t.write("Partition {}: ".format(n_partitions))
+				t.write("Partition {}: ".format(n_communities))
 				for c in ccomps:
 					for node in c:
 						t.write("{} ".format(node))
