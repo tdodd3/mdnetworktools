@@ -238,8 +238,8 @@ class DynamicNetwork(Topology):
             
             avg_dist_matrix = np.zeros(shape=(self.nresidues, self.nresidues))
             
-            # Compute ideal batchsize
-            batchsize = int(math.ceil(self.natoms*0.126))
+            # Ideal batchsize seems to be 5000
+            batchsize = 5000
             
             # Generate batches and compute distances
             batches = gen_batches(self.residues, batchsize)
@@ -583,8 +583,8 @@ class DifferenceNetwork(Topology):
             coords = frame.xyz[0]
             tmp_c = np.zeros(shape=(self.nresidues, self.nresidues))
             
-            # Determine ideal batch size
-            batchsize = int(math.ceil(self.natoms*0.126))
+            # Ideal batch size seems to be 5000
+            batchsize = 5000
             
             # Generate batches and compute distances for reference frame
             self.log._generic("Computing all distances for reference frame {}".format(index))
