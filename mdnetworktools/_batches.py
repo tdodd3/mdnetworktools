@@ -128,7 +128,7 @@ def batch_distances(residues, batch, coords, c, cutoff=0.45):
                                         min1, min2, tmp_c, residues,
                                         c, cutoff=cutoff)
                                 
-                                
+# Find nonzero elements by residue                                
 def gen_nonzero(c):
         w = []
         for x in range(c.shape[0]):
@@ -154,10 +154,22 @@ def reduce2(residue1, residues2, ind1, w, distarr, c):
                         c[ind1][ind2] += 1.0
                         c[ind2][ind1] += 1.0
                 count += len(r_b)
-                
-def _accumulate(w, residues, coords, c):
+
+# Distances for a subset that has been pre-determined
+def _accumulate(w, coords, residues, c):
         """Determine distances from subset of batches and populate
         the contact matrix with 0 or 1.
+        
+        Parameters
+        ------------
+        w : list, Residues that have nonzero elements in the full distance array
+        coords : array, md.Trajectory.Frame reference
+        residues : list, list-of-lists containing atom indices by residue
+        c : array, contact map by residue
+        
+        Returns
+        ------------
+        None - contact map is modified in-place
         """
         for i in range(len(w)):
                 subset = [residues[x] for x in w[i]]
