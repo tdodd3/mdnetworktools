@@ -247,6 +247,8 @@ class DynamicNetwork(Topology):
                             avg_dist_matrix, cutoff=0.8)
             
             del avg_coords
+            
+            avg_dist_matrix = avg_dist_matrix * 10 # Convert to angstroms
         
         self.log._timing(4, round(time.time()-start,3))
         
