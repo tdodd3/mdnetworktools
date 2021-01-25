@@ -233,7 +233,7 @@ class DynamicNetwork(Topology):
             del dist_matrix
             
         else:
-            self.log._generic("Computing distances in batches")
+            self.log._generic("Warning: NATOMS > MEM_ALLOC - Computing distances in batches")
             from _batches import gen_batches, batch_distances
             
             avg_dist_matrix = np.zeros(shape=(self.nresidues, self.nresidues))
