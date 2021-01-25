@@ -71,8 +71,11 @@ class Topology(object):
                    rtop[res][loc_index] = _masses[atom]
                 loc_index += 1
                 indices.append(r)
-        #self.rtop = rtop
-        #self.indices = indices
+        
+        self.natoms = len(indices)
+        self.residues = [list(rtop[i].keys()) for i in rtop]
+        self.nresidues = len(self.residues)
+        
         return rtop, indices
 
 class DynamicNetwork(Topology):
@@ -108,9 +111,13 @@ class DynamicNetwork(Topology):
             
         self.log._startup()
         params = {"Topology": topFile, "Trajectory": trajFile, 
-                  "Number of atoms": len(self.indices),
-                  "Number of residues": len(list(self.rtop.keys()))}
+                  "Number of atoms": self.natoms,
+                  "Number of residues": self.nresidues}
         self.log._logit((0,0), params=params)
+        
+        self.MEM_OK = True
+        if self.natoms > 15999: # We need to invoke memory-friendly functions
+            self.MEM_OK = False
 
     def com_coords(self, coords):
         """Computes the center of mass for each residue.
@@ -132,9 +139,9 @@ class DynamicNetwork(Topology):
         com_coords = []
         com_means = []
         _len = coords.shape[0]
-        residues = list(self.rtop.keys())
-        rank = len(residues)
-        for i in range(rank):
+        #residues = list(self.rtop.keys())
+        #rank = len(residues)
+        for i in range(self.nresidues):
                 atoms = list(self.rtop[i].keys())
                 weights = np.asarray(list(self.rtop[i].values()))
                 c = (np.asarray([coords[:,atoms][:,i]*weights[i] \
@@ -197,8 +204,8 @@ class DynamicNetwork(Topology):
         start = time.time()
         self.log._logit((2,4))
         
-        residues = list(self.rtop.keys())
-        rank = len(residues)
+        #residues = list(self.rtop.keys())
+        #rank = len(residues)
         avg_coords = None
         iter_ = 0
         #for coords in self.chunks:
@@ -214,25 +221,32 @@ class DynamicNetwork(Topology):
                 avg_coords += sum_coords
             iter_ += coords.shape[0]
         avg_coords =/ float(iter_)
-        dist_matrix = pdist(avg_coords, metric='euclidean')
-        dist_matrix = squareform(dist_matrix)
-        dist_matrix = dist_matrix * 10 # convert from nm to angstroms
         
-        del avg_coords
+        if self.MEM_OK == True:
+            dist_matrix = tst.scipy_dist(avg_coords)
         
-        # Find the closest distance between heavy atoms in each 
-        # residue pair - this is currently the bottleneck.
+            del avg_coords
         
-        avg_dist_matrix = np.zeros(shape=(rank,rank))
-        for r in range(rank-1):
-            res1 = list(self.rtop[residues[r]].keys())
-            for j in range(r+1, rank):
-                res2 = list(self.rtop[residues[j]].keys())
-                min_d = np.min(np.ravel(dist_matrix[res1][:, res2]))
-                avg_dist_matrix[r][j] = min_d
-                avg_dist_matrix[j][r] = min_d
+            avg_dist_matrix = np.zeros(shape=(self.nresidues,self.nresidues))
+            tst._squeeze(dist_matrix, avg_dist_matrix, self.residues)
         
-        del dist_matrix
+            del dist_matrix
+            
+        else:
+            self.log._generic("Computing distances in batches")
+            from _batches import gen_batches, batch_distances
+            
+            avg_dist_matrix = np.zeros(shape=(self.nresidues, self.nresidues))
+            
+            # Compute ideal batchsize
+            batchsize = int(math.ceil(self.natoms*0.126))
+            
+            # Generate batches and compute distances
+            batches = gen_batches(self.residues, batchsize)
+            batch_distances(self.residues, batches, avg_dist_matrix, 
+                            avg_coords, cutoff=0.8)
+            
+            del avg_coords
         
         self.log._timing(4, round(time.time()-start,3))
         
