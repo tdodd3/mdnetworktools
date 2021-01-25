@@ -606,6 +606,7 @@ class DifferenceNetwork(Topology):
                 coords = chunk.xyz
                 for frame in coords:
                     _accumulate(w, frame, self.residues, c)
+                tframes += coords.shape[0]
                 
         c /= float(tframes)
         
