@@ -496,7 +496,8 @@ class DifferenceNetwork(Topology):
         
         return stride
 
-    def compute_contacts(self, traj, chunk_size=1000, strideit=False, slf=0.1):
+    def compute_contacts(self, traj, chunk_size=1000, strideit=False, slf=0.1, 
+                        enable_cuda=False, use_reference=False, index=0, cutoff=1.5):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
            of each other.
@@ -512,6 +513,17 @@ class DifferenceNetwork(Topology):
                percentage of the total trajectory is used
         slf : float
                Percentage of the total trajectory - used when strideit == True
+        enable_cuda : bool
+               Whether to enable CUDA for computing contacts
+        use_reference : bool
+               Whether to compute all distances on a single frame of the trajectory
+               and then filter out residues outside of a cutoff. These residues are
+               then used to compute contacts for the entire trajectory.
+        index : int
+               Reference frame of trajectory. Only used if use_reference == True
+        cutoff : float
+               Cutoff in nanometers for reference calculation. Only used if 
+               use_reference == True
 
         Returns
         -------------
@@ -531,19 +543,41 @@ class DifferenceNetwork(Topology):
         # Currently, CUDA versions for computing
         # contacts do not support systems containing more than 16,000 atoms.
         # Working on a fix for this...
+        if self.MEM_OK == False and enable_cuda == True:
+            enable_cuda = False
+            self.log._generic("WARNING: CUDA versions currently do not support systems " + \
+                              "larger than 16,000 atoms - disabling CUDA")
             
-        #residues = [list(rtop[i].keys()) for i in rtop]
-        #rank = len(residues)
         c = np.zeros(shape=(self.nresidues, self.nresidues))
         tframes = 0
         
-        for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
-                                 stride=stride, atom_indices=self.indices):
-            coords = chunk.xyz
-            for frame in coords:
-                tst.contacts_by_frame(frame, self.residues, c)
-            tframes += coords.shape[0]
+        # Case 1: System fits into memory and CUDA is enabled
+        if enable_cuda == True:
+            import utilCUDA as uc
+            
+            for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
+                                     stride=stride, atom_indices=self.indices):
+                coords = chunk.xyz
+                tmp_c = uc.contacts_by_chunk_CUDA(coords)
+                c += tmp_c
+                tframes += coords.shape[0]
         
+        # Case 2: System does not fit into memory and we are computing 
+        # contacts by frame - Slowest version
+        if self.MEM_OK == False and use_reference == False:
+            for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
+                                    stride=stride, atom_indices=self.indices):
+                coords = chunk.xyz
+                for frame in coords:
+                    tst.contacts_by_frame(frame, self.residues, c)
+                tframes += coords.shape[0]
+        
+        # Case 3: System does not fit into memory. We compute all distances
+        # using a reference frame and then use a cutoff to determine which residue
+        # pairs will be included in the calculation for the entire trajectory.
+        if self.MEM_OK == False and use_reference == True:
+            
+            frame = md.load_frame(traj, index, top=self.top, atom_indices=self.indices)
         c /= float(tframes)
         
         self.log._timing(6, round(time.time()-start,3))
