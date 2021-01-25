@@ -117,7 +117,7 @@ def batch_distances(residues, batch, coords, c, cutoff=0.45):
         """
         
         batches = batch[0]
-        batchID = batch[1]
+        batchIds = batch[1]
         for i, x_slice in enumerate(batches):
                 for j, y_slice in enumerate(batches):
                         if i == j or i < j:
