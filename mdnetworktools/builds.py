@@ -21,7 +21,7 @@ import timeseriestools as tst
 import math
 import time
 from _logger import LOG
-from scipy.spatial.distance import pdist, squareform
+#from scipy.spatial.distance import pdist, squareform
 
 class Topology(object):
     """Reduced representation of the input topology
