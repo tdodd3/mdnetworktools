@@ -136,7 +136,7 @@ def gen_nonzero(c):
                 w.append(np.where(j != 0.0)[0])
         return w
 
-def reduce2(residue1, residues2, ind1, w, distarr, c):
+def _reduce2(residue1, residues2, ind1, w, distarr, c):
         """Reduce subarray of all-atom distances to residue-level
         contacts. The contact map, c, is modified in-place.
         """
