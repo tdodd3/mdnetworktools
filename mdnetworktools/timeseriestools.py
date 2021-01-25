@@ -131,7 +131,7 @@ def scipy_dist(avg_coords):
 	return dist_matrix
 
 # Reduction from all-atom distances to residue level distances
-def _squeeze(dist_matrix, avg_dist_matrix, residues)
+def _squeeze(dist_matrix, avg_dist_matrix, residues):
 	# Find the closest distance between heavy atoms in each 
         # residue pair - this is currently the bottleneck.
         
