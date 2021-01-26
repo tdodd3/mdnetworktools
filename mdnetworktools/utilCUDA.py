@@ -170,10 +170,10 @@ def cudaContacts(chunk, coords, dists):
 	for i in range(_dim):
 		r_i = i + (_dim * tx)
 		# Check bounds of NxN array
-		if r_i >= dists.shape[0]-1:
+		if r_i >= dists.shape[0]:
 			return
 		res1 = ref[i]	
-		for j in range(r_i+1, _len):
+		for j in range(r_i, _len):
 			res2 = coords[j]
 			d = cdist(res1, res2)
 			if d <= 0.45 and d != 0.0:
@@ -204,24 +204,23 @@ def split_coords(coords):
 #### Main calls used by mdnetworktools.py ####
 
 # Contacts    
-def contacts_by_chunk_CUDA(coords, device=CU_DEVICE):
+def contacts_by_frame_CUDA(coords, device=CU_DEVICE):
 	cuda.select_device(device)
 	#chunk = split_coords(coords[0])
-	natoms = int(coords[0].shape[0])
-	contacts = np.zeros(shape=(natoms,natoms))
-	for frame in coords:
-		chunk = split_coords(frame)
-		# Set all CUDA parameters
-		A_mem = cuda.to_device(chunk)
-		B_mem = cuda.to_device(frame)
-		C_mem = cuda.device_array((natoms,natoms))
-		blockspergrid = 1
-		threadsperblock = TPB
+	natoms = int(coords.shape[0])
+	
+	chunk = split_coords(coords)
+	# Set all CUDA parameters
+	A_mem = cuda.to_device(chunk)
+	B_mem = cuda.to_device(coords)
+	C_mem = cuda.device_array((natoms,natoms))
+	blockspergrid = 1
+	threadsperblock = TPB
 
-		# Execute on TPB * 1 threads
-		cudaContacts[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
-		dists = C_mem.copy_to_host()
-		contacts += dists
+	# Execute on TPB * 1 threads
+	cudaContacts[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
+	contacts = C_mem.copy_to_host()
+
 	return (contacts + contacts.T)
 
 # Correlations
