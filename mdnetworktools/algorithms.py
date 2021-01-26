@@ -129,10 +129,9 @@ class GirvanNewman(object):
 			if Q > bestQ:
 				bestQ = Q
 				bestcomps = ccomps
-				self.log._generic("Partition {}: Modularity: {} ".format(n_communities, Q) + \
-						  "Difference from previous {}".format(diff))
+				self.log._generic("Partition {}: Modularity: {} ".format(n_communities, Q))
 			if n_communities > 1:
-				t.write("Partition {}: ".format(n_communities))
+				t.write("Partition {}\n".format(n_communities))
 				for c in ccomps:
 					for node in c:
 						t.write("{} ".format(node))
