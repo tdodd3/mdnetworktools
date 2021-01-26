@@ -563,9 +563,9 @@ class DifferenceNetwork(Topology):
                 tst._squeeze(tmp_c, c, self.residues, use_min=False)
                 tframes += coords.shape[0]
         
-        # Case 2: System does not fit into memory and we are computing 
+        # Case 2: System does or does not fit into memory and we are computing 
         # contacts by frame - Slowest version
-        if self.MEM_OK == False and use_reference == False:
+        if use_reference == False and enable_cuda == False:
             for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
                                     stride=stride, atom_indices=self.indices):
                 coords = chunk.xyz
