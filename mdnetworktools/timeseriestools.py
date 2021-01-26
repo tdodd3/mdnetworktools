@@ -142,10 +142,10 @@ def _squeeze(matrixA, matrixB, residues, use_min=True):
                 	matrixB[r][j] = min_d
                 	matrixB[j][r] = min_d
 		else:  # By contact
-                        ones = np.where(matrixA[res1][:, res2] == 1.0)[0]
-                        if len(ones) != 0:
-                                matrixB[r][j] += 1.0
-                                matrixB[j][r] += 1.0
+                        m_x = np.max(np.ravel(matrixA[res1][:, res2]))
+                        if m_x != 0:
+                                matrixB[r][j] += m_x
+                                matrixB[j][r] += m_x
 			
 # Slower version for larger systems (>16,000 atoms)
 @jit(nopython=True, cache=True)
