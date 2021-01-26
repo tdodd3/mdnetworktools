@@ -134,7 +134,7 @@ class DrawObject(Topology):
         for line in f:
                 if "Partition" in line:
                         lines = line.split()
-                        if int(lines[-1][:-1]) == ncomms:
+                        if int(lines[-1]) == ncomms:
                                 fromFile = f[count+1:count+ncomms+1]
                                 break
                 count += 1
@@ -147,7 +147,7 @@ class DrawObject(Topology):
 
     def write_chimera_session(self, ncomms, commFile="communities.dat"):
 
-        writecommunities(commFile, ncomms)
+        self.writecommunities(commFile, ncomms)
         t = open("communities{}.py".format(ncomms), "w")
 
         t.write("import os\nimport numpy as np\n" + \
@@ -171,7 +171,7 @@ class DrawObject(Topology):
 
         txtfile = "communities{}.txt".format(ncomms)
         exe = "for c in comms:\n\treplyobj.status('Coloring residues in community ' + str(c))\n\t" + \
-		" resids = ','.join(comms[c])\n\trc('color ' + colors[c] + ' :' + resids)"
+		"resids = ','.join(comms[c])\n\trc('color ' + colors[c] + ' :' + resids)"
 	t.write(func)
         t.write(color_dict)
         t.write("comms = get_communities('{}')\n".format(txtfile))
