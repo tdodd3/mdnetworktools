@@ -153,7 +153,9 @@ def _minwdist(c1, c2):
 	min_d = 1000.0
 	for x in range(c1.shape[0]):
 		d = np.sqrt(np.sum((c2-c1[x])**2, axis=1))
-		min_d = np.min(d)
+		tmp_d = np.min(d)
+		if tmp_d < min_d and tmp_d != 0:
+			min_d = tmp_d
 	return min_d
 
 def contacts_by_frame(frame, residues, c):
