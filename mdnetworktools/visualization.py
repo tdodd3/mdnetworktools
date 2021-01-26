@@ -175,7 +175,7 @@ class DrawObject(Topology):
 	t.write(func)
         t.write(color_dict)
         t.write("comms = get_communities('{}')\n".format(txtfile))
-        t.write("rc('open ' + {})\n".format(self.refName))
+        t.write("rc('open ' + '{}')\n".format(self.refName))
         t.write(exe)
 
         t.close()
