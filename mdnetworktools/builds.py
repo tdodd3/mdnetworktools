@@ -564,8 +564,9 @@ class DifferenceNetwork(Topology):
             for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
                                      stride=stride, atom_indices=self.indices):
                 coords = chunk.xyz
-                tmp_c = uc.contacts_by_chunk_CUDA(coords)
-                tst._squeeze(tmp_c, c, self.residues, use_min=False)
+                for frame in coords:
+                    tmp_c = uc.contacts_by_frame_CUDA(coords)
+                    tst._squeeze(tmp_c, c, self.residues, use_min=False)
                 tframes += coords.shape[0]
         
         # Case 2: System does or does not fit into memory and we are computing 
