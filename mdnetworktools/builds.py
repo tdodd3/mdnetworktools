@@ -560,7 +560,7 @@ class DifferenceNetwork(Topology):
                                      stride=stride, atom_indices=self.indices):
                 coords = chunk.xyz
                 tmp_c = uc.contacts_by_chunk_CUDA(coords)
-                c += tmp_c
+                tst._squeeze(tmp_c, c, self.residues, use_min=False)
                 tframes += coords.shape[0]
         
         # Case 2: System does not fit into memory and we are computing 
@@ -736,7 +736,7 @@ class DifferenceNetwork(Topology):
                                           index=index, cutoff=cutoff2)
             states.append(state)
        
-        self.consensus_matrix = self.consensus_network(states, cutoff=cutoff)
+        self.consensus_matrix = self.consensus_network(states, cutoff=cutoff1)
         self.difference_matrix = self.diff_network(states)
         
         self.log._generic("Saving consensus and difference matrices to file")
