@@ -155,7 +155,7 @@ def cudaCorrel(chunk, coords, corr):
 # Pairwise distance - while technically faster than the jit version
 # this method is still inefficient and needs a future fix
 @cuda.jit		
-def cudaDist(chunk, coords, dists):
+def cudaContacts(chunk, coords, dists):
 	
 	x = cuda.grid(1)
 	tx = cuda.threadIdx.x
@@ -176,7 +176,7 @@ def cudaDist(chunk, coords, dists):
 			res2 = coords[j]
 			d = cdist(res1, res2)
 			if d <= 0.45 and d != 0.0:
-				dists[r_i, j] = d
+				dists[r_i, j] = 1.0
 
 #### Data prep methods ####
 
@@ -218,9 +218,8 @@ def contacts_by_chunk_CUDA(coords, device=CU_DEVICE):
 		threadsperblock = TPB
 
 		# Execute on TPB * 1 threads
-		cudaDist[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
+		cudaContacts[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
 		dists = C_mem.copy_to_host()
-		dists[dists > 0.0] = 1.0
 		contacts += dists
 	return (contacts + contacts.T)
 
