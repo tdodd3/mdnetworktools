@@ -51,6 +51,7 @@ except:
 		      "Setting the default to device 0. If this " + \
 		      "is not the desired behavior, please set " + \
 		      "variable manually.")
+	pass
 
 
 
