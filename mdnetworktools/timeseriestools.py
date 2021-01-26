@@ -130,20 +130,23 @@ def scipy_dist(avg_coords):
 	dist_matrix = dist_matrix * 10 # convert from nm to angstroms
 	return dist_matrix
 
-# Reduction from all-atom distances to residue level distances
-def _squeeze(dist_matrix, avg_dist_matrix, residues):
-	# Find the closest distance between heavy atoms in each 
-        # residue pair - this is currently the bottleneck.
-        
+# Reduction from all-atom to residue level
+def _squeeze(matrixA, matrixB, residues, use_min=True): 
         rank = len(residues)
         for r in range(rank-1):
-            res1 = residues[i]
+            res1 = residues[r]
             for j in range(r+1, rank):
                 res2 = residues[j]
-                min_d = np.min(np.ravel(dist_matrix[res1][:, res2]))
-                avg_dist_matrix[r][j] = min_d
-                avg_dist_matrix[j][r] = min_d
-	
+		if use_min == True:
+                	min_d = np.min(np.ravel(matrixA[res1][:, res2]))
+                	matrixB[r][j] = min_d
+                	matrixB[j][r] = min_d
+		else:  # By contact
+                        ones = np.where(matrixA[res1][:, res2] == 1.0)[0]
+                        if len(ones) != 0:
+                                matrixB[r][j] += 1.0
+                                matrixB[j][r] += 1.0
+			
 # Slower version for larger systems (>16,000 atoms)
 @jit(nopython=True, cache=True)
 def _minwdist(c1, c2):
