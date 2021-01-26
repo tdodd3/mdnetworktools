@@ -565,7 +565,7 @@ class DifferenceNetwork(Topology):
                                      stride=stride, atom_indices=self.indices):
                 coords = chunk.xyz
                 for frame in coords:
-                    tmp_c = uc.contacts_by_frame_CUDA(coords)
+                    tmp_c = uc.contacts_by_frame_CUDA(frame)
                     tst._squeeze(tmp_c, c, self.residues, use_min=False)
                 tframes += coords.shape[0]
         
