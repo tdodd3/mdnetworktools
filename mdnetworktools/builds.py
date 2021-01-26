@@ -548,6 +548,11 @@ class DifferenceNetwork(Topology):
             enable_cuda = False
             self.log._generic("WARNING: CUDA versions currently do not support systems " + \
                               "larger than 16,000 atoms - disabling CUDA")
+        
+        if self.MEM_OK == True and use_reference == True:
+            use_reference = False
+            self.log._generic("WARNING: NATOMS < MEM_ALLOC - Reference calculation is\n" + \
+                              "reserved for larger systems. Setting use_reference to FALSE")
             
         c = np.zeros(shape=(self.nresidues, self.nresidues))
         tframes = 0
