@@ -66,6 +66,16 @@ def cdist(v1, v2):
 	d = math.sqrt(x+y+z)
 	return d
 
+# Pairwise contacts
+@cuda.jit('float32(float32[:,:], float32[:,:])', device=True, inline=True)
+def pwcontacts(arr1, arr2):
+        s = 0.0
+        for i in range(arr1.shape[0]):
+                d = cdist(arr1[i], arr2[i])
+                if d <= 0.45 and d != 0.0:
+                        s += 1.0
+        return s
+
 # Dot product
 @cuda.jit('float32(float32[:], float32[:])', device=True, inline=True)
 def dot(v1, v2):
@@ -175,11 +185,15 @@ def cudaContacts(chunk, coords, dists):
 		res1 = ref[i]	
 		for j in range(r_i, _len):
 			res2 = coords[j]
-			d = cdist(res1, res2)
-			if d <= 0.45 and d != 0.0:
-				dists[r_i, j] = 1.0
+			c = pwcontacts(res1, res2)
+			dists[r_i, j] = c
 
 #### Data prep methods ####
+
+# Reshaping input coordinates
+def _reshape(coords):
+        x = [coords[:,i] for i in range(coords.shape[1])]
+        return np.asarray(x, dtype=np.float32)
 
 # Splitting input based on TPB
 def split_coords(coords):
@@ -206,22 +220,21 @@ def split_coords(coords):
 # Contacts    
 def contacts_by_frame_CUDA(coords, device=CU_DEVICE):
 	cuda.select_device(device)
-	#chunk = split_coords(coords[0])
-	natoms = int(coords.shape[0])
-	
-	chunk = split_coords(coords)
-	# Set all CUDA parameters
-	A_mem = cuda.to_device(chunk)
-	B_mem = cuda.to_device(coords)
-	C_mem = cuda.device_array((natoms,natoms))
-	blockspergrid = 1
-	threadsperblock = TPB
+        natoms = int(coords.shape[1])
+        r_coords = _reshape(coords)
+        chunk = split_coords(r_coords)
+        # Set all CUDA parameters
+        A_mem = cuda.to_device(chunk)
+        B_mem = cuda.to_device(r_coords)
+        C_mem = cuda.device_array((natoms,natoms))
+        blockspergrid = 1
+        threadsperblock = TPB
 
-	# Execute on TPB * 1 threads
-	cudaContacts[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
-	contacts = C_mem.copy_to_host()
+        # Execute on TPB * 1 threads
+        cudaContacts[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
+        contacts = C_mem.copy_to_host()
 
-	return (contacts + contacts.T)
+        return (contacts + contacts.T)
 
 # Correlations
 def compute_correlations_CUDA(coords, device=CU_DEVICE):
