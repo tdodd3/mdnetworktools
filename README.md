@@ -19,6 +19,8 @@ git clone https://github.com/tdodd3/mdnetworktools
 
 Then:
 
+cd mdnetworks/
+
 python setup.py install
 
 # Using CUDA
