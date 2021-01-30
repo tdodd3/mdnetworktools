@@ -64,7 +64,7 @@ def gen_batches(residues, batchsize):
         return batches, ids
 
 # Reduction from all-atom distances to closest-heavy between residues
-def _reduce(batchIdX, batchIdY, val1, val2, tmp_c, residues, c, cutoff):
+def _reduce(batchIdX, batchIdY, val1, val2, tmp_c, residues, c):
         """
         Parameters
         ------------
@@ -75,7 +75,6 @@ def _reduce(batchIdX, batchIdY, val1, val2, tmp_c, residues, c, cutoff):
         tmp_c : array, subarray of all-atom distances
         residues : list, atoms grouped by residue
         c : array, residue distance matrix to be modified in-place
-        cutoff : float, distance cutoff
         
         Returns
         ------------
@@ -87,14 +86,12 @@ def _reduce(batchIdX, batchIdY, val1, val2, tmp_c, residues, c, cutoff):
                 res1 = np.subtract(residues[i], val1) # Compute index to tmp_c
                 for j in range(batchIdY[0], batchIdY[1]+1):
                         res2 = np.subtract(residues[j], val2) # Compute index to tmp_c
-                        # If distances fall within the cutoff, modify the specified distance matrix
-                        if len(np.where(tmp_c[res1][:,res2] < cutoff)[0]) != 0:
-                                min_d = np.min(np.ravel(tmp_c[res1][:,res2]))
-                                c[i][j] = min_d
-                                c[j][i] = min_d
+                        min_d = np.min(np.ravel(tmp_c[res1][:,res2]))
+                        c[i][j] = min_d
+                        c[j][i] = min_d
 
 # Computes distances in batches                                
-def batch_distances(residues, batch, coords, c, cutoff=0.45):
+def batch_distances(residues, batch, coords, c):
         """
         Parameters
         ------------
@@ -102,7 +99,6 @@ def batch_distances(residues, batch, coords, c, cutoff=0.45):
         batch : tuple, where batch[0] are the batches and batch[1] are the batch IDs
         coords : array
         c : array, residue distance matrix to be modified in-place
-        cutoff : float, distances (in nanometers) considered relevant, default is 0.45
         
         Returns
         ------------
@@ -125,15 +121,14 @@ def batch_distances(residues, batch, coords, c, cutoff=0.45):
                                 min1 = np.min(batches[i])
                                 min2 = np.min(batches[j])
                                 _reduce(batchIds[i], batchIds[j],
-                                        min1, min2, tmp_c, residues,
-                                        c, cutoff=cutoff)
+                                        min1, min2, tmp_c, residues, c)
                                 
 # Find nonzero elements by residue                                
-def gen_nonzero(c):
+def gen_nonzero(c, cutoff):
         w = []
         for x in range(c.shape[0]):
                 j = c[:,x]
-                w.append(np.where(j != 0.0)[0])
+                w.append(np.where(j <= cutoff)[0])
         return w
 
 def _reduce2(residue1, residues2, ind1, w, distarr, c):
