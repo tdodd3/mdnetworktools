@@ -128,7 +128,8 @@ def gen_nonzero(c, cutoff):
         w = []
         for x in range(c.shape[0]):
                 j = c[:,x]
-                w.append(np.where(j <= cutoff)[0])
+                s = np.where(j <= cutoff)[0]
+                w.append(np.asarray([y for y in s if y != x]))
         return w
 
 def _reduce2(residue1, residues2, ind1, w, distarr, c):
@@ -147,7 +148,6 @@ def _reduce2(residue1, residues2, ind1, w, distarr, c):
                 min_d = np.min(distarr[res1][:, res2])
                 if min_d <= 0.45:
                         c[ind1][ind2] += 1.0
-                        c[ind2][ind1] += 1.0
                 count += len(r_b)
 
 # Distances for a subset that has been pre-determined
