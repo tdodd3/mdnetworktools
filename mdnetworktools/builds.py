@@ -245,7 +245,7 @@ class DynamicNetwork(Topology):
             # Generate batches and compute distances
             batches = gen_batches(self.residues, batchsize)
             batch_distances(self.residues, batches, avg_coords, 
-                            avg_dist_matrix, cutoff=0.8)
+                            avg_dist_matrix)
             
             del avg_coords
             
@@ -498,7 +498,7 @@ class DifferenceNetwork(Topology):
         return stride
 
     def compute_contacts(self, traj, chunk_size=1000, strideit=False, slf=0.1, 
-                        enable_cuda=False, use_reference=False, index=0, cutoff=1.5):
+                        enable_cuda=False, use_reference=False, index=0, cutoff=12.0):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
            of each other.
@@ -523,7 +523,7 @@ class DifferenceNetwork(Topology):
         index : int
                Reference frame of trajectory. Only used if use_reference == True
         cutoff : float
-               Cutoff in nanometers for reference calculation. Only used if 
+               Cutoff in angstroms for reference calculation. Only used if 
                use_reference == True
 
         Returns
@@ -540,6 +540,9 @@ class DifferenceNetwork(Topology):
             stride = self.configure_stride(traj, chunk_size=chunk_size, f=slf)
         else:
             stride = 1
+        
+        # Convert cutoff from angstroms to nanometers
+        cutoff = cutoff * 0.1
         
         # Currently, CUDA versions for computing
         # contacts do not support systems containing more than 16,000 atoms.
@@ -596,10 +599,10 @@ class DifferenceNetwork(Topology):
             self.log._generic("Computing all distances for reference frame {}".format(index))
             batches = gen_batches(self.residues, batchsize)
             batch_distances(self.residues, batches, coords, 
-                            tmp_c, cutoff=cutoff)
+                            tmp_c)
             
             # Nonzero elements from reference frame calculation
-            w = gen_nonzero(tmp_c)
+            w = gen_nonzero(tmp_c, cutoff)
             
             del coords
             del frame
