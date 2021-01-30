@@ -469,34 +469,6 @@ class DifferenceNetwork(Topology):
         if self.natoms > 15999:
             self.MEM_OK = False
          
-    def configure_stride(self, traj, chunk_size, f=0.1):
-        """Reconfigures the stride argument so that only a 
-        percentage of the total trajectory is used for analysis.
-        
-        Parameters
-        ------------
-        traj : string
-            Path to trajectory file
-        chunk_size : int
-            Number of frames to process at one time
-        f : float
-            Percentage of total trajectory
-            
-        Returns
-        ------------
-        stride : int
-        
-        """
-            
-        tframes = 0
-        
-        for chunk in md.iterload(traj, top=self.top, chunk=chunk_size):
-                tframes += chunk.xyz.shape[0]
-        t = float(tframes) * f
-        stride = int(math.ceil(tframes/t))
-        
-        return stride
-
     def compute_contacts(self, traj, chunk_size=1000, strideit=False, slf=0.1, 
                         enable_cuda=False, use_reference=False, index=0, cutoff=12.0):
         """Computes contacts between all residues in reduced topology.
@@ -537,7 +509,7 @@ class DifferenceNetwork(Topology):
         self.log._logit((2,6))
         
         if strideit == True:
-            stride = self.configure_stride(traj, chunk_size=chunk_size, f=slf)
+            stride = int(math.ceil(float(1.0)/slf))
         else:
             stride = 1
         
