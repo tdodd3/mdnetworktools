@@ -132,7 +132,7 @@ def gen_nonzero(c, cutoff):
                 w.append(np.asarray([y for y in s if y != x]))
         return w
 
-def _reduce2(residue1, residues2, ind1, w, distarr, c):
+def _reduce2(residue1, residues2, ind1, w, distarr, c, use_min=True):
         """Reduce subarray of all-atom distances to residue-level
         contacts. The contact map, c, is modified in-place.
         """
@@ -145,13 +145,18 @@ def _reduce2(residue1, residues2, ind1, w, distarr, c):
                 r_b = residues2[i]
                 # Indices of residue2 in subarray
                 res2 = [j+count for j in range(len(r_b))]
-                min_d = np.min(distarr[res1][:, res2])
-                if min_d <= 0.45:
-                        c[ind1][ind2] += 1.0
+                if use_min == True:
+                        min_d = np.min(distarr[res1][:, res2])
+                        if min_d <= 0.45:
+                                c[ind1][ind2] += 1.0
+                else: # For CUDA version
+                        maxc = np.max(distarr[res1][:, res2])
+                        if maxc != 0.0:
+                                c[ind1][ind2] += maxc
                 count += len(r_b)
 
 # Distances for a subset that has been pre-determined
-def _accumulate(w, coords, residues, c):
+def _accumulate(w, coords, residues, c, enable_cuda=False):
         """Determine distances from subset of batches and populate
         the contact matrix with 0 or 1.
         
@@ -161,14 +166,21 @@ def _accumulate(w, coords, residues, c):
         coords : array, md.Trajectory.Frame reference
         residues : list, list-of-lists containing atom indices by residue
         c : array, contact map by residue
+        enable_cuda : bool, use an available GPU to compute contacts
         
         Returns
         ------------
         None - contact map is modified in-place
         """
+        if enable_cuda == True:
+                import utilCUDA as uc
         for i in range(len(w)):
                 subset = [residues[x] for x in w[i]]
                 batch1 = residues[i]
                 batch2 = np.hstack(subset)
-                d = nppdist(coords[batch1], coords[batch2])
-                _reduce2(batch1, subset, i, w[i], d, c)
+                if enable_cuda == True:
+                        d = uc.batch_pwc_CUDA(coords[batch1], coords[batch2])
+                        _reduce2(batch1, subset, i, w[i], d, c, use_min=False)
+                else:
+                        d = nppdist(coords[batch1], coords[batch2])
+                        _reduce2(batch1, subset, i, w[i], d, c)
