@@ -188,6 +188,20 @@ def cudaContacts(chunk, coords, dists):
 			c = pwcontacts(res1, res2)
 			dists[r_i, j] = c
 
+# Contacts for _accumulate_CUDA in _batches.py
+@cuda.jit
+def batch_contacts(ref_coords, coords, out):
+        x = cuda.grid(1)
+        tx = cuda.threadIdx.x
+
+        if x > out.shape[1]:
+                return
+
+        _dim = int(ref_coords.shape[0])
+        d = coords[tx]
+        for i in range(_dim):
+                out[i, tx] = pwcontacts(ref_coords[i], d)
+
 #### Data prep methods ####
 
 # Reshaping input coordinates
@@ -263,3 +277,26 @@ def compute_covariances_CUDA(coords, device=CU_DEVICE):
 	cudaCovar[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
 	c = C_mem.copy_to_host()
 	return c + c.T
+
+# Batch contacts used by _batches._accumulate_CUDA
+def batch_pwc_CUDA(ref_c, coords, device=1):
+        cuda.select_device(device)
+        dim1 = ref_c.shape[0]
+        dim2 = coords.shape[0]
+        if dim1 > TPB:
+                chunk = split_coords(coords)
+                threadsperblock = TPB
+        else:
+                chunk = coords
+                threadsperblock = coords.shape[0]
+        # Set all CUDA parameters
+        A_mem = cuda.to_device(ref_c)
+        B_mem = cuda.to_device(chunk)
+        C_mem = cuda.device_array((dim1,dim2))
+        blockspergrid = 1
+
+        # Execute on TPB * 1 threads
+        batch_contacts[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
+        contacts = C_mem.copy_to_host()
+
+        return contacts
