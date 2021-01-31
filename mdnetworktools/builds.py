@@ -715,6 +715,7 @@ class DifferenceNetwork(Topology):
                                           use_reference=use_reference,
                                           index=index, cutoff=cutoff2)
             states.append(state)
+            np.savetxt("state{}.dat".format(i+1), state, fmt="%0.5f")
        
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff1)
         self.difference_matrix = self.diff_network(states)
