@@ -194,13 +194,20 @@ def batch_contacts(ref_coords, coords, out):
         x = cuda.grid(1)
         tx = cuda.threadIdx.x
 
-        if x > out.shape[1]:
+        if x >= out.shape[1]:
                 return
-
+	
+	d = coords[tx]
         _dim = int(ref_coords.shape[0])
-        d = coords[tx]
+	_len = int(d.shape[0])
+	
         for i in range(_dim):
-                out[i, tx] = pwcontacts(ref_coords[i], d)
+		for j in range(_len):
+			# Compute the index to the out array
+			r_j = j + (tx * _len)
+			if r_j >= out.shape[1]:
+				return
+                	out[i, r_j] = pwcontacts(ref_coords[i], d[j])
 
 #### Data prep methods ####
 
@@ -283,17 +290,13 @@ def batch_pwc_CUDA(ref_c, coords, device=1):
         cuda.select_device(device)
         dim1 = ref_c.shape[0]
         dim2 = coords.shape[0]
-        if dim1 > TPB:
-                chunk = split_coords(coords)
-                threadsperblock = TPB
-        else:
-                chunk = coords
-                threadsperblock = coords.shape[0]
+        chunk = split_coords(coords)
         # Set all CUDA parameters
         A_mem = cuda.to_device(ref_c)
         B_mem = cuda.to_device(chunk)
         C_mem = cuda.device_array((dim1,dim2))
         blockspergrid = 1
+	threadsperblock = TPB
 
         # Execute on TPB * 1 threads
         batch_contacts[blockspergrid, threadsperblock](A_mem, B_mem, C_mem)
