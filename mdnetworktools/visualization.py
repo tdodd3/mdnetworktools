@@ -119,7 +119,7 @@ class DrawObject(Topology):
         cnodeF.close()
      
     def draw_paths(self, ifile="paths.txt", pathcolor="red", smoothness=0.01, 
-                   nodecolor="green", radius=0.1, output="paths.bild"):
+                   nodecolor="green", minprob=0.25, radius=0.1, output="paths.bild"):
         t = open(output, "w")
         coords = self.ref.xyz[0]*10
         com_coords = []
