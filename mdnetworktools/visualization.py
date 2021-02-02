@@ -152,7 +152,7 @@ class DrawObject(Topology):
 
         t.write("import os\nimport numpy as np\n" + \
                 "from chimera import runCommand as rc\n" + \
-                "from chimera import replyObj\n")
+                "from chimera import replyobj\n")
 
         t.write("\n# Def function for reading in community data\n")
 
