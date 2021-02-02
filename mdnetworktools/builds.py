@@ -665,7 +665,7 @@ class DifferenceNetwork(Topology):
         return diff
 
     def build_network(self, cutoff1=0.90, chunk_size=100, strideit=False, slf=0.1,
-                     enable_cuda=False, use_reference=False, index=0, cutoff2=1.5):
+                     enable_cuda=False, use_reference=False, index=0, cutoff2=12.0):
         """Low-level API that builds the network
         
         Parameters
@@ -686,7 +686,7 @@ class DifferenceNetwork(Topology):
         index : int
             Frame number for reference calculation, only used when use_reference==True
         cutoff2 : float
-            Distance in nanometers for computing distances in reference frame,
+            Distance in angstroms for computing distances in reference frame,
             only used when use_reference == True
             
         Returns
