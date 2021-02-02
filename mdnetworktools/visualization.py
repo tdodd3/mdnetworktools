@@ -109,7 +109,7 @@ class DrawObject(Topology):
             com_coords.append(com)
         paths, _ = self.import_paths(ifile)
         for p in paths:
-            ipath = self.intrpl_(p, coords, smoothness)
+            ipath = self.intrpl_(p, com_coords, smoothness)
             for c in range(len(ipath[0]) - 1):
                 x1 = ipath[0][c]
                 y1 = ipath[1][c]
