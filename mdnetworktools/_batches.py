@@ -172,7 +172,7 @@ def _accumulate(w, coords, residues, c, use_cuda=False):
         ------------
         None - contact map is modified in-place
         """
-        if enable_cuda == True:
+        if use_cuda == True:
                 import utilCUDA as uc
         for i in range(len(w)):
                 subset = [residues[x] for x in w[i]]
