@@ -98,9 +98,28 @@ class DrawObject(Topology):
         unew = np.arange(0, 1.01, smoothness)
         out = interpolate.splev(unew, tck)
         return out
-        
+
+    def output_critical_nodes(self, paths, com_coords, nodecolor, minprob):
+        path_len = len(paths)
+        bildF = open("critical_nodes.bild", "w")
+        cnodeF = open("critical_nodes.txt", "w")
+        nodes = np.hstack(paths)
+        counts = np.unique(nodes, return_counts=True)
+        for node in range(counts[0].shape[0]):
+            res = counts[0][node]
+            prob = counts[1][node]/float(path_len)
+            coor = com_coords[res]
+            if prob >= minprob:
+                cnodeF.write("{} {}\n".format(res+1, prob))
+                bildF.write(".color {}\n".format(nodecolor))
+                ltw = ".sphere {} {} {} {}\n".format(round(coor[0], 3),
+                       round(coor[1], 3), round(coor[2], 3), 1.5)
+                bildF.write(ltw)
+        bildF.close()
+        cnodeF.close()
+     
     def draw_paths(self, ifile="paths.txt", pathcolor="red", smoothness=0.01, 
-                   radius=0.1, output="paths.bild"):
+                   nodecolor="green", radius=0.1, output="paths.bild"):
         t = open(output, "w")
         coords = self.ref.xyz[0]*10
         com_coords = []
@@ -108,6 +127,7 @@ class DrawObject(Topology):
             com = self.com_(coords, resid)
             com_coords.append(com)
         paths, _ = self.import_paths(ifile)
+	self.output_critical_nodes(paths, com_coords, nodecolor, minprob)
         for p in paths:
             ipath = self.intrpl_(p, com_coords, smoothness)
             for c in range(len(ipath[0]) - 1):
