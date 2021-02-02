@@ -687,7 +687,7 @@ class DifferenceNetwork(Topology):
             current_traj = self.trajFiles[i]
             
             state = self.compute_contacts(current_traj, chunk_size, 
-                                          strideit=stride,
+                                          stride=stride,
                                           enable_cuda=enable_cuda,
                                           index=index, cutoff=cutoff2)
             states.append(state)
