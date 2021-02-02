@@ -469,7 +469,7 @@ class DifferenceNetwork(Topology):
         if self.natoms > 15999:
             self.MEM_OK = False
          
-    def compute_contacts(self, traj, chunk_size=1000, stride=1 
+    def compute_contacts(self, traj, chunk_size=1000, stride=1, 
                         enable_cuda=False, index=0, cutoff=12.0):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
