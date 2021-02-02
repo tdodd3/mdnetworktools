@@ -753,7 +753,7 @@ class DifferenceNetwork(Topology):
             
         """
         
-        comms = self.get_communities(commFile)
+        comms = self.get_communities(commFile, offset)
         nonzero = np.where(diff != 0.0)
         contacts = {}
 
