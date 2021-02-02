@@ -537,7 +537,7 @@ class DifferenceNetwork(Topology):
         # using a reference frame and batches. Then use a cutoff to determine 
         # which residue pairs will be included in the calculation for the entire trajectory.
         if self.MEM_OK == False and enable_cuda == True:
-            from _batches import _gen_batches, batch_distances, _accumulate, gen_nonzero
+            from _batches import gen_batches, batch_distances, _accumulate, gen_nonzero
             from utilCUDA import _reshape
             
             # Load reference frame coordinates
