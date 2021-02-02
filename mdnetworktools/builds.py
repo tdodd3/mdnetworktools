@@ -556,7 +556,7 @@ class DifferenceNetwork(Topology):
             
             # Nonzero elements from reference frame calculation
             w = gen_nonzero(tmp_c, cutoff)
-            
+            self.log._generic("Filtering residues within {} cutoff".format(cutoff))
             del coords
             del frame
             del tmp_c
@@ -676,7 +676,7 @@ class DifferenceNetwork(Topology):
         
         start = time.time()
         params = {"Cutoff": cutoff1, "Chunk size": chunk_size,
-                  "stride": stride, 
+                  "stride": stride, "CUDA": enable_cuda,
                   "Number of states": len(self.trajFiles)}
         self.log._logit((1,7), params=params)
         
