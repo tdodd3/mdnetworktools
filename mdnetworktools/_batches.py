@@ -156,7 +156,7 @@ def _reduce2(residue1, residues2, ind1, w, distarr, c, use_min=True):
                 count += len(r_b)
 
 # Distances for a subset that has been pre-determined
-def _accumulate(w, coords, residues, c, enable_cuda=False):
+def _accumulate(w, coords, residues, c, use_cuda=False):
         """Determine distances from subset of batches and populate
         the contact matrix with 0 or 1.
         
@@ -178,7 +178,7 @@ def _accumulate(w, coords, residues, c, enable_cuda=False):
                 subset = [residues[x] for x in w[i]]
                 batch1 = residues[i]
                 batch2 = np.hstack(subset)
-                if enable_cuda == True:
+                if use_cuda:
                         d = uc.batch_pwc_CUDA(coords[batch1], coords[batch2])
                         _reduce2(batch1, subset, i, w[i], d, c, use_min=False)
                 else:
