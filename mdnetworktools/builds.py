@@ -469,11 +469,14 @@ class DifferenceNetwork(Topology):
         if self.natoms > 15999:
             self.MEM_OK = False
          
-    def compute_contacts(self, traj, chunk_size=1000, strideit=False, slf=0.1, 
-                        enable_cuda=False, use_reference=False, index=0, cutoff=12.0):
+    def compute_contacts(self, traj, chunk_size=1000, stride=1 
+                        enable_cuda=False, index=0, cutoff=12.0):
         """Computes contacts between all residues in reduced topology.
            Contacts between residues are defined as being within 4.5 angstroms
-           of each other.
+           of each other. For CUDA versions on systems that do not fit into 
+           memory, all atom contacts are computed for a reference frame. This 
+           calculation is then used to determine residues within a cutoff for 
+           subsquent calculations that can dumped onto the GPU.
 
         Parameters
         -------------
@@ -481,22 +484,17 @@ class DifferenceNetwork(Topology):
                Path to trajectory file
         chunk_size : int
                How many frames to process at one time
-        strideit : bool
+        stride : int
                Whether to configure the stride argument so that only a 
                percentage of the total trajectory is used
-        slf : float
-               Percentage of the total trajectory - used when strideit == True
         enable_cuda : bool
                Whether to enable CUDA for computing contacts
-        use_reference : bool
-               Whether to compute all distances on a single frame of the trajectory
-               and then filter out residues outside of a cutoff. The remaining residues 
-               are then used to compute contacts for the entire trajectory.
         index : int
-               Reference frame of trajectory. Only used if use_reference == True
+               Reference frame of trajectory. Only used if enable_cuda == True
+               and self.MEM_OK == False
         cutoff : float
                Cutoff in angstroms for reference calculation. Only used if 
-               use_reference == True
+               enable_cuda == True and self.MEM_OK == False
 
         Returns
         -------------
@@ -508,32 +506,14 @@ class DifferenceNetwork(Topology):
         start = time.time()
         self.log._logit((2,6))
         
-        if strideit == True:
-            stride = int(math.ceil(float(1.0)/slf))
-        else:
-            stride = 1
-        
         # Convert cutoff from angstroms to nanometers
         cutoff = cutoff * 0.1
-        
-        # Currently, CUDA versions for computing
-        # contacts do not support systems containing more than 16,000 atoms.
-        # Working on a fix for this...
-        if self.MEM_OK == False and enable_cuda == True:
-            enable_cuda = False
-            self.log._generic("WARNING: CUDA versions currently do not support systems " + \
-                              "larger than 16,000 atoms - disabling CUDA")
-        
-        if self.MEM_OK == True and use_reference == True:
-            use_reference = False
-            self.log._generic("WARNING: NATOMS < MEM_ALLOC - Reference calculation is\n" + \
-                              "reserved for larger systems. Setting use_reference to FALSE")
             
         c = np.zeros(shape=(self.nresidues, self.nresidues))
         tframes = 0
         
         # Case 1: System fits into memory and CUDA is enabled
-        if enable_cuda == True:
+        if enable_cuda == True and self.MEM_OK == True:
             import utilCUDA as uc
             
             for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
@@ -545,7 +525,7 @@ class DifferenceNetwork(Topology):
         
         # Case 2: System does or does not fit into memory and we are computing 
         # contacts by frame - Slowest version
-        if use_reference == False and enable_cuda == False:
+        if enable_cuda == False:
             for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
                                     stride=stride, atom_indices=self.indices):
                 coords = chunk.xyz
@@ -556,8 +536,8 @@ class DifferenceNetwork(Topology):
         # Case 3: System does not fit into memory. We compute all distances
         # using a reference frame and batches. Then use a cutoff to determine 
         # which residue pairs will be included in the calculation for the entire trajectory.
-        if self.MEM_OK == False and use_reference == True:
-            from _batches import gen_batches, batch_distances, _accumulate, gen_nonzero
+        if self.MEM_OK == False and enable_cuda == True:
+            from _batches import _reshape, gen_batches, batch_distances, _accumulate, gen_nonzero
             
             # Load reference frame coordinates
             frame = md.load_frame(traj, index, top=self.top, atom_indices=self.indices)
@@ -584,9 +564,8 @@ class DifferenceNetwork(Topology):
             
             for chunk in md.iterload(traj, top=self.top, chunk=chunk_size,
                                      stride=stride, atom_indices=self.indices):
-                coords = chunk.xyz
-                for frame in coords:
-                    _accumulate(w, frame, self.residues, c)
+                coords = _reshape(chunk.xyz)
+                _accumulate(w, coords, self.residues, c, use_cuda=True)
                 tframes += coords.shape[0]
               
         # Check, in case we've counted contacts twice!
@@ -664,8 +643,8 @@ class DifferenceNetwork(Topology):
         
         return diff
 
-    def build_network(self, cutoff1=0.90, chunk_size=100, strideit=False, slf=0.1,
-                     enable_cuda=False, use_reference=False, index=0, cutoff2=12.0):
+    def build_network(self, cutoff1=0.90, chunk_size=100, stride=1,
+                     enable_cuda=False, index=0, cutoff2=12.0):
         """Low-level API that builds the network
         
         Parameters
@@ -674,20 +653,17 @@ class DifferenceNetwork(Topology):
            Probability cutoff for determining persistent contacts
         chunk_size : int
             Number of frames to process at one time
-        strideit : bool
+        stride : int
             Configure stride to only use a percentage of the total
             trajectory
-        slf : float
-            Percentage of the total trajectory - used with strideit argument
         enable_cuda : bool
             Whether to use CUDA version for computing contacts
-        use_reference : bool
-            Whether to use reference frame for distance calculation
         index : int
-            Frame number for reference calculation, only used when use_reference==True
+            Frame number for reference calculation, only used when enable_cuda==True
+            and self.MEM_OK==False
         cutoff2 : float
             Distance in angstroms for computing distances in reference frame,
-            only used when use_reference == True
+            only used when enable_cuda==True and self.MEM_OK==False
             
         Returns
         ------------
@@ -699,7 +675,7 @@ class DifferenceNetwork(Topology):
         
         start = time.time()
         params = {"Cutoff": cutoff1, "Chunk size": chunk_size,
-                  "stride": strideit, "Stride factor":slf, 
+                  "stride": stride, 
                   "Number of states": len(self.trajFiles)}
         self.log._logit((1,7), params=params)
         
@@ -710,9 +686,8 @@ class DifferenceNetwork(Topology):
             current_traj = self.trajFiles[i]
             
             state = self.compute_contacts(current_traj, chunk_size, 
-                                          strideit=strideit, slf=slf,
+                                          strideit=stride,
                                           enable_cuda=enable_cuda,
-                                          use_reference=use_reference,
                                           index=index, cutoff=cutoff2)
             states.append(state)
             np.savetxt("state{}.dat".format(i+1), state, fmt="%0.5f")
