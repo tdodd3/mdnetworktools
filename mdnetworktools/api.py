@@ -97,9 +97,9 @@ class Configuration(object):
 
 			net = DynamicNetwork(self.top, self.trajs)
 			net.build_network(chunk_size=chunk_size,
-					stride=stride, align=align,
-					cutoff=cutoff, scheme=scheme,
-					enable_cuda=enable_cuda)
+						stride=stride, align=align,
+						cutoff=cutoff, scheme=scheme,
+						enable_cuda=enable_cuda)
 
 			self.network = net.network
 
