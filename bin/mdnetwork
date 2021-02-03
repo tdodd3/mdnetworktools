@@ -18,7 +18,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from api import Configuration
+from mdnetworktools.api import Configuration
 import sys
 
 FILE = str(sys.argv[1])
