@@ -21,8 +21,8 @@ the appropriate mdnetworktools method with the specified options.
 
 from configparser import ConfigParser
 import numpy as np
-from mdnetworktools.builds import DynamicNetwork, DifferenceNetwork
-from mdnetworktools.algorithms import GirvanNewman, SOAN
+from builds import DynamicNetwork, DifferenceNetwork
+from algorithms import GirvanNewman, SOAN
 #from mdnetworktools.visualization import DrawObject
 
 class Configuration(object):
@@ -181,7 +181,7 @@ class Configuration(object):
 	def execute(self):
 
 		if self.visualize:
-			from mdnetworktools.visualization import DrawObject
+			from visualization import DrawObject
 			self.draw = DrawObject(self.top, self.reference, network=self.network)
 			for q in self.queue:
 				self.config_and_run_visual(q)
