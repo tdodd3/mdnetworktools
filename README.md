@@ -19,7 +19,7 @@ git clone https://github.com/tdodd3/mdnetworktools
 
 Then:
 
-cd mdnetworks/
+cd mdnetworktools/
 
 python setup.py install
 
