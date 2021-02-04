@@ -39,7 +39,7 @@ Now, you can call the mdnetwork executable along with a configuration file from 
 
 mdnetwork example.cfg
 
-Please see the /examples directory for examples of .cfg files and advanced scripts.
+Please see the /examples directory for examples of .cfg files.
 
 # Using CUDA
 MDNetworkTools has some features which can take advantage of a GPU. Currently, there are two ways to 
