@@ -28,13 +28,14 @@ While MDNetworkTools allows for advanced Python scripting, most users will be ab
 the high-level API executable found in the /bin directory. Upon successful installation:
 
 cd bin/
+
 chmod +x mdnetwork
 
 Then edit the $PATH variable in your .bashrc file. As an example:
 
 export PATH=$PATH:/home/tdodd/mdnetworktools/bin/
 
-Now, you can call mdnetwork executable along with a configuration file from the command line. 
+Now, you can call the mdnetwork executable along with a configuration file from the command line. 
 
 mdnetwork example.cfg
 
