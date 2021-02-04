@@ -1,7 +1,7 @@
 # MDNetworkTools
 
 MDNetworkTools is an all-in-one python package that builds networks directly from molecular dynamics trajectories. Additionally, the software
-provides functionality for network analysis (community detection and suboptimal paths calculations) and visualization. 
+provides functionality for network analysis (community detection and suboptimal paths calculations), as well as, visualization. 
 At its core, MDNetworkTools utilizes multiple Python modules. Trajectory and topology processing is accomplished with MDTraj, while the network generation
 algorithms employ jit-compiled methods via the Numba package. At present, only network generation methods benefit from the speed-up of Numba, although future releases
 may extend this to the network analysis algorithms. Please refer to Required Packages for the complete list of necessary software.
@@ -22,6 +22,23 @@ Then:
 cd mdnetworktools/
 
 python setup.py install
+
+# Basic Usage
+While MDNetworkTools allows for advanced Python scripting, most users will be able to get away with using
+the high-level API executable found in the /bin directory. Upon successful installation:
+
+cd bin/
+chmod +x mdnetwork
+
+Then edit the $PATH variable in your .bashrc file. As an example:
+
+export PATH=$PATH:/home/tdodd/mdnetworktools/bin/
+
+Now, you can call mdnetwork executable along with a configuration file from the command line. 
+
+mdnetwork example.cfg
+
+Please see the /examples directory for examples of .cfg files and advanced scripts.
 
 # Using CUDA
 MDNetworkTools has some features which can take advantage of a GPU. Currently, there are two ways to 
