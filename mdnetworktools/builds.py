@@ -70,7 +70,7 @@ class Topology(object):
                 else:
                    rtop[res][loc_index] = _masses[atom]
                 loc_index += 1
-                indices.append(r)
+                indices.append(int(r))
         
         self.natoms = len(indices)
         self.residues = [list(rtop[i].keys()) for i in rtop]
