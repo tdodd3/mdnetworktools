@@ -286,7 +286,7 @@ def compute_covariances_CUDA(coords, device=CU_DEVICE):
 	return c + c.T
 
 # Batch contacts used by _batches._accumulate_CUDA
-def batch_pwc_CUDA(ref_c, coords, device=1):
+def batch_pwc_CUDA(ref_c, coords, device=CU_DEVICE):
         cuda.select_device(device)
         dim1 = ref_c.shape[0]
         dim2 = coords.shape[0]
