@@ -693,8 +693,16 @@ class DifferenceNetwork(Topology):
             states.append(state)
             np.savetxt("state{}.dat".format(i+1), state, fmt="%0.5f")
        
+        # Calculate differences between each state and save to file
+        for i in range(len(states)-1):
+            for j in range(i+1, len(states)):
+                difference_matrix = self.diff_network([states[i], states[j]])
+                np.savetxt("difference_{}-{}.dat".format(i+1,j+1),
+                                          difference_matrix,
+                                          fmt="%0.5f")
+
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff1)
-        self.difference_matrix = self.diff_network(states)
+        #self.difference_matrix = self.diff_network(states)
         
         self.log._generic("Saving consensus and difference matrices to file")
         np.savetxt("consensus.dat", self.consensus_matrix, fmt="%0.0f")
