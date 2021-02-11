@@ -740,13 +740,13 @@ class DifferenceNetwork(Topology):
                  count += 1
         return s
 
-    def deltaP(self, commFile, diff, offset=0):
+    def deltaP(self, commFile, network, offset=0):
         """Function for accumulating the difference in contact
         probabilities into communities.
         
         commFile : string
             Path to communities text file
-        diff : NumPy array
+        network : NumPy array
             Difference network containing the change in 
             contact probabilities
         offset : int
