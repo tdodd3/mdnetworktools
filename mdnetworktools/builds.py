@@ -755,45 +755,22 @@ class DifferenceNetwork(Topology):
             
         Returns
         -----------
-        contacts : Python dict
-            Dict is structured as keys == tuple(communityi, communityj)
-            and values == total difference in contact probability
+        None : Results written to deltaP.dat
             
         """
         
         comms = self.get_communities(commFile, offset)
-        nonzero = np.where(diff != 0.0)
-        contacts = {}
+        ofile = open("deltaP.dat", "w")
+        ckeys = list(comms.keys())
+        permutations = [(ckeys[x], ckeys[y]) for x in range(len(ckeys)-1) \
+                        for y in range(x+1, len(ckeys))]
 
-        for c in range(nonzero[0].shape[0]):
-            ind1 = nonzero[0][c]
-            ind2 = nonzero[1][c]
-            p = diff[ind1][ind2]
-            cc = []
-            for com in comms:
-                if ind1 in comms[com] and ind2 not in comms[com]:
-                   cc.append(com)
-                if ind2 in comms[com] and ind1 not in comms[com]:
-                   cc.append(com)
-            cc = tuple(cc)
-            if cc not in contacts and len(cc) > 1:
-               contacts[cc] = p
-            if cc in contacts and len(cc) > 1:
-               contacts[cc] += p
+        for pair in permutations:
+                comm1 = comms[pair[0]]
+                comm2 = comms[pair[1]]
+                deltap = np.sum(network[comm1][:,comm2])
+                ofile.write("{} {} {}\n".format(pair[0], pair[1], deltap))
 
-        return contacts
- 
-    def write_deltaP(self, deltaP, oname="deltaP.dat"):
-        """Writes the results of self.deltaP to a text file.
-        
-        Parameters
-        -------------
-        deltaP : Python dict
-            contacts determined from self.deltaP
-        """
-        
-        f = open(oname, "w")
-        for pair in deltaP:
-            f.write("{} {} {}\n".format(pair[0], pair[1], deltaP[pair]))
-        f.close()
+        ofile.close()
+
 
