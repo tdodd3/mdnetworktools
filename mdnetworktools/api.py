@@ -118,7 +118,7 @@ class Configuration(object):
 						index=index, cutoff2=cutoff2)
 
 			self.network = net.consensus_matrix
-			self.diff = net.difference_matrix
+			#self.diff = net.difference_matrix
 
 		else:
 			raise KeyError("Network type not found - Check .cfg file")	
