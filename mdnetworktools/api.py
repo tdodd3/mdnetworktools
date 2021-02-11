@@ -151,8 +151,7 @@ class Configuration(object):
 				offset = 0
 				pass
 			net = DifferenceNetwork(self.top, self.trajs)
-			c = net.deltaP(community_file, self.network, offset=offset)
-			net.write_deltaP(c)		
+			net.deltaP(community_file, self.network, offset=offset)	
 
 		else:
 			raise KeyError("Analysis type not found - Check .cfg file")
