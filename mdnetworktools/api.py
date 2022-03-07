@@ -108,6 +108,24 @@ class Configuration(object):
 			cutoff1 = float(info["contacts_cutoff"])	
 			index = int(info["reference_frame"])
 			cutoff2 = float(info["distance_cutoff"])
+			# Check to see if user wants the difference matrices computed using 
+			# a specific order (current options are None, sequential or some custom
+			# specification 0.1,0.2,1.3)
+			try:
+				order = info["diff_order"]
+				if order == 'sequential':
+					order = [(i, i+1) for i in range(len(self.trajs)-1)]
+				else:
+					tmp_order = order.split(",")
+					new_order = []
+					for pair in tmp_order:
+						tmp_s = pair.split(".")
+						new_order.append((int(tmp_s[0]), int(tmp_s[1])))
+					order = new_order
+			except:
+				# Defaults to one versus all calculation
+				order = None
+				pass
 
 			net = DifferenceNetwork(self.top, self.trajs)
 
@@ -115,7 +133,9 @@ class Configuration(object):
 						chunk_size=chunk_size,
 						stride=stride,
 						enable_cuda=enable_cuda,
-						index=index, cutoff2=cutoff2)
+						index=index, 
+						cutoff2=cutoff2,
+						order=order)
 
 			self.network = net.consensus_matrix
 			#self.diff = net.difference_matrix

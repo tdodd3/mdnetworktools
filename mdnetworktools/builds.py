@@ -645,7 +645,7 @@ class DifferenceNetwork(Topology):
         return diff
 
     def build_network(self, cutoff1=0.90, chunk_size=100, stride=1,
-                     enable_cuda=False, index=0, cutoff2=12.0):
+                     enable_cuda=False, index=0, cutoff2=12.0, order=None):
         """Low-level API that builds the network
         
         Parameters
@@ -665,6 +665,10 @@ class DifferenceNetwork(Topology):
         cutoff2 : float
             Distance in angstroms for computing distances in reference frame,
             only used when enable_cuda==True and self.MEM_OK==False
+        order : list of tuples or None
+            Determine how to compute the difference matrices. None implies one versus all
+            calculation, while the list of tuples determines which states to compute
+            differences for.
             
         Returns
         ------------
@@ -694,19 +698,28 @@ class DifferenceNetwork(Topology):
             np.savetxt("state{}.dat".format(i+1), state, fmt="%0.5f")
        
         # Calculate differences between each state and save to file
-        for i in range(len(states)-1):
-            for j in range(i+1, len(states)):
-                difference_matrix = self.diff_network([states[i], states[j]])
-                np.savetxt("difference_{}-{}.dat".format(i+1,j+1),
-                                          difference_matrix,
-                                          fmt="%0.5f")
+        if order == None:
+            for i in range(len(states)-1):
+                for j in range(i+1, len(states)):
+                    difference_matrix = self.diff_network([states[i], states[j]])
+                    np.savetxt("difference_{}-{}.dat".format(i+1,j+1),
+                                            difference_matrix,
+                                            fmt="%0.5f")
+        else:
+            for ordered_pair in order:
+                state_i = states[ordered_pair[0]]
+                state_j = states[ordered_pair[1]]
+                difference_matrix = self.diff_network([state_i, state_j])
+                np.savetxt("difference_{}-{}.dat".format(ordered_pair[0]+1, ordered_pair[1]+1),
+                                            difference_matrix,
+                                            fmt="%0.5f")
 
         self.consensus_matrix = self.consensus_network(states, cutoff=cutoff1)
         #self.difference_matrix = self.diff_network(states)
         
         self.log._generic("Saving consensus and difference matrices to file")
         np.savetxt("consensus.dat", self.consensus_matrix, fmt="%0.0f")
-        np.savetxt("difference.dat", self.difference_matrix, fmt="%0.5f")
+        #np.savetxt("difference.dat", self.difference_matrix, fmt="%0.5f")
         
         self.log._timing(7, round(time.time()-start, 3))
                 
